@@ -1,0 +1,129 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "$connections": {
+      "defaultValue": {},
+      "type": "Object"
+    }
+  },
+  "triggers": {
+    "manual": {
+      "type": "Request",
+      "kind": "Http",
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "eventId": { "type": "string" },
+            "submittedAt": { "type": "string" },
+            "site": { "type": "string" },
+            "siteOther": { "type": "string" },
+            "nearMissType": { "type": "string" },
+            "isSatelliteUnit": { "type": "boolean" },
+            "satelliteUnitName": { "type": "string" },
+            "completedBy": { "type": "string" },
+            "completedOn": { "type": "string" },
+            "timeOfDay": { "type": "string" },
+            "errorCategories": { "type": "array", "items": { "type": "string" } },
+            "errorDrug": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "cmmCode": { "type": "string" },
+                "vtmId": { "type": "string" },
+                "vtmName": { "type": "string" },
+                "vmpId": { "type": "string" },
+                "vmpName": { "type": "string" },
+                "ampId": { "type": "string" },
+                "ampName": { "type": "string" },
+                "scannedGtin14": { "type": "string" },
+                "batchNumber": { "type": "string" },
+                "expiryDate": { "type": "string" },
+                "isExpired": { "type": "boolean" },
+                "isNti": { "type": "boolean" }
+              }
+            },
+            "intendedDrug": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "cmmCode": { "type": "string" },
+                "vtmId": { "type": "string" },
+                "vmpId": { "type": "string" },
+                "ampId": { "type": "string" },
+                "isNti": { "type": "boolean" }
+              }
+            },
+            "qtyDispensed": { "type": "string" },
+            "qtyPrescribed": { "type": "string" },
+            "contributingFactors": { "type": "array", "items": { "type": "string" } },
+            "learningNote": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "actions": {
+    "Create_SharePoint_Item": {
+      "type": "OpenApiConnection",
+      "inputs": {
+        "host": {
+          "connectionName": "shared_sharepointonline",
+          "operationId": "PostItem",
+          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+        },
+        "parameters": {
+          "dataset": "https://uhb.sharepoint.com/teams/PharmacySafety",
+          "table": "Pharmacy Near Miss Log",
+          "item/Title": "@triggerBody()?['eventId']",
+          "item/SubmittedAt": "@triggerBody()?['submittedAt']",
+          "item/Site/Value": "@triggerBody()?['site']",
+          "item/SiteOther": "@triggerBody()?['siteOther']",
+          "item/NearMissType/Value": "@triggerBody()?['nearMissType']",
+          "item/IsSatelliteUnit/Value": "@if(triggerBody()?['isSatelliteUnit'], 'Yes', 'No')",
+          "item/SatelliteUnitName": "@triggerBody()?['satelliteUnitName']",
+          "item/CompletedBy": "@triggerBody()?['completedBy']",
+          "item/CompletedOn": "@triggerBody()?['completedOn']",
+          "item/TimeOfDay/Value": "@triggerBody()?['timeOfDay']",
+          "item/ErrorDrugName": "@triggerBody()?['errorDrug']?['name']",
+          "item/ErrorDrugCMM": "@triggerBody()?['errorDrug']?['cmmCode']",
+          "item/ErrorDrugVTMID": "@triggerBody()?['errorDrug']?['vtmId']",
+          "item/ErrorDrugVTMName": "@triggerBody()?['errorDrug']?['vtmName']",
+          "item/ErrorDrugVMPID": "@triggerBody()?['errorDrug']?['vmpId']",
+          "item/ErrorDrugVMPName": "@triggerBody()?['errorDrug']?['vmpName']",
+          "item/ErrorDrugAMPID": "@triggerBody()?['errorDrug']?['ampId']",
+          "item/ErrorDrugGTIN14": "@triggerBody()?['errorDrug']?['scannedGtin14']",
+          "item/ErrorDrugBatch": "@triggerBody()?['errorDrug']?['batchNumber']",
+          "item/ErrorDrugExpiry": "@triggerBody()?['errorDrug']?['expiryDate']",
+          "item/ErrorDrugIsExpired/Value": "@if(triggerBody()?['errorDrug']?['isExpired'], 'Yes', 'No')",
+          "item/ErrorDrugIsNTI/Value": "@if(triggerBody()?['errorDrug']?['isNti'], 'Yes', 'No')",
+          "item/IntendedDrugName": "@triggerBody()?['intendedDrug']?['name']",
+          "item/IntendedDrugCMM": "@triggerBody()?['intendedDrug']?['cmmCode']",
+          "item/IntendedDrugVTMID": "@triggerBody()?['intendedDrug']?['vtmId']",
+          "item/IntendedDrugVMPID": "@triggerBody()?['intendedDrug']?['vmpId']",
+          "item/IntendedDrugAMPID": "@triggerBody()?['intendedDrug']?['ampId']",
+          "item/IntendedDrugIsNTI/Value": "@if(triggerBody()?['intendedDrug']?['isNti'], 'Yes', 'No')",
+          "item/QuantityDispensed": "@triggerBody()?['qtyDispensed']",
+          "item/QuantityPrescribed": "@triggerBody()?['qtyPrescribed']",
+          "item/LearningNote": "@triggerBody()?['learningNote']"
+        }
+      },
+      "runAfter": {}
+    },
+    "Response_200": {
+      "type": "Response",
+      "kind": "Http",
+      "inputs": {
+        "statusCode": 200,
+        "body": {
+          "status": "success",
+          "eventId": "@triggerBody()?['eventId']"
+        }
+      },
+      "runAfter": {
+        "Create_SharePoint_Item": [ "Succeeded" ]
+      }
+    }
+  }
+}

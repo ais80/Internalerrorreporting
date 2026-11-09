@@ -9,10 +9,13 @@ window.NEARMISS_CONFIG = {
   // Stage 1: Local / Network Share Micro-Server Bridge
   localBridgeUrl: 'http://localhost:8088',
 
-  // Stage 2A: IIS Intranet API Endpoint (Option 2)
+  // Stage 2A: Google Sheets Webhook (Apps Script Web App)
+  googleSheetsWebhookUrl: '',
+
+  // Stage 2B: IIS Intranet API Endpoint (Option 2)
   iisEndpoint: 'https://pharmacy-intranet.uhb.nhs.uk/api/nearmiss',
 
-  // Stage 2B: Microsoft 365 Power Automate / SharePoint Webhook (Option 4)
+  // Stage 2C: Microsoft 365 Power Automate / SharePoint Webhook (Option 4)
   sharepointWebhookUrl: '',
 
   // Offline LocalStorage Queue Key

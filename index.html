@@ -1104,6 +1104,7 @@
     <!-- Status & Settings -->
     <div class="status-actions">
       <div class="offline-badge" id="offlineQueueBadge" title="Offline Queue - click to export">Offline: 0</div>
+      <button class="btn-icon-subtle" id="cloudConfigBtn" title="Cloud Sync Settings (Google Sheets / SharePoint Webhook)">☁️</button>
       <button class="btn-icon-subtle" id="themeToggleBtn" title="Toggle Light / Dark mode">🌓</button>
     </div>
   </header>
@@ -1292,6 +1293,43 @@
         <button type="button" class="btn-cam-ctrl" id="btnCancelCamera">Cancel</button>
       </div>
       <div id="cameraStatusNote" style="font-size:11px; text-align:center; color:var(--text-muted); padding:4px 0 8px 0;">Supports GS1 DataMatrix (Batch &amp; Expiry) and 1D EAN Barcodes</div>
+    </div>
+  </div>
+
+  <!-- Cloud Sync / Webhook Settings Modal -->
+  <div class="modal-overlay" id="cloudModalOverlay">
+    <div class="modal-dialog">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h2 style="margin:0; font-size:16px;">☁️ Central Database &amp; Cloud Sync Settings</h2>
+        <button type="button" class="camera-modal-close" id="btnCloseCloudModal">&times;</button>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+        Connect mobile phones and checking benches directly to a live Google Sheet or NHS Microsoft 365 SharePoint list.
+      </p>
+
+      <div style="margin-bottom:12px;">
+        <label style="font-size:11px; font-weight:700; display:block; margin-bottom:4px;">Target Storage Provider:</label>
+        <select id="cloudStorageModeSelect" class="text-box" style="width:100%; height:34px;">
+          <option value="auto">Auto-Detect (Local Server if active, else Cloud Webhook)</option>
+          <option value="google-sheets">Google Sheets Webhook (Apps Script)</option>
+          <option value="sharepoint-webhook">Microsoft 365 Power Automate / SharePoint</option>
+          <option value="local-bridge">Local PC Bridge (localhost:8088)</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11px; font-weight:700; display:block; margin-bottom:4px;">Cloud Webhook URL (Google Apps Script or Power Automate):</label>
+        <input type="text" id="cloudWebhookInput" class="text-box" style="width:100%; font-family:monospace; font-size:12px;" placeholder="https://script.google.com/macros/s/.../exec">
+        <span style="font-size:10px; color:var(--text-muted);">Saved in phone browser storage for all future submissions.</span>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-color); padding-top:12px;">
+        <button type="button" class="btn-reset" id="btnSyncOfflineNow" style="font-size:12px; padding:6px 10px;">⚡ Sync Pending (<span id="pendingSyncCount">0</span>)</button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-reset" id="btnCancelCloudModal">Cancel</button>
+          <button type="button" class="btn-primary" id="btnSaveCloudConfig" style="padding:6px 14px; font-size:12px;">Save &amp; Connect</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1719,7 +1757,17 @@
       
       btnResetForm: document.getElementById('btnResetForm'),
       btnSubmit: document.getElementById('btnSubmit'),
-      toastContainer: document.getElementById('toastContainer')
+      toastContainer: document.getElementById('toastContainer'),
+      
+      cloudConfigBtn: document.getElementById('cloudConfigBtn'),
+      cloudModalOverlay: document.getElementById('cloudModalOverlay'),
+      btnCloseCloudModal: document.getElementById('btnCloseCloudModal'),
+      btnCancelCloudModal: document.getElementById('btnCancelCloudModal'),
+      cloudStorageModeSelect: document.getElementById('cloudStorageModeSelect'),
+      cloudWebhookInput: document.getElementById('cloudWebhookInput'),
+      btnSaveCloudConfig: document.getElementById('btnSaveCloudConfig'),
+      btnSyncOfflineNow: document.getElementById('btnSyncOfflineNow'),
+      pendingSyncCount: document.getElementById('pendingSyncCount')
     };
 
     // --- Initialise Header & Workstation Defaults ---
@@ -2687,20 +2735,44 @@
       const payload = buildCanonicalPayload();
       state.lastSubmittedEventId = payload.eventId;
 
-      // Send to StorageProvider
+      // Send to StorageProvider (Cloud Webhook / Google Sheets / SharePoint / Local Bridge)
       let saved = false;
+      const storedWebhook = localStorage.getItem('nearmiss_cloud_webhook') || '';
       const cfg = window.NEARMISS_CONFIG || { storageMode: 'local-bridge', localBridgeUrl: 'http://localhost:8088' };
-      let targetUrl = cfg.localBridgeUrl + '/api/nearmiss';
-      if (cfg.storageMode === 'iis-api' && cfg.iisEndpoint) targetUrl = cfg.iisEndpoint;
-      if (cfg.storageMode === 'sharepoint-webhook' && cfg.sharepointWebhookUrl) targetUrl = cfg.sharepointWebhookUrl;
+      
+      let targetUrl = '';
+      if (storedWebhook) {
+        targetUrl = storedWebhook;
+      } else if (cfg.googleSheetsWebhookUrl) {
+        targetUrl = cfg.googleSheetsWebhookUrl;
+      } else if (cfg.sharepointWebhookUrl) {
+        targetUrl = cfg.sharepointWebhookUrl;
+      } else if (cfg.storageMode === 'iis-api' && cfg.iisEndpoint) {
+        targetUrl = cfg.iisEndpoint;
+      } else {
+        targetUrl = (cfg.localBridgeUrl || 'http://localhost:8088') + '/api/nearmiss';
+      }
+
+      const isGoogleAppsScript = targetUrl.includes('script.google.com');
 
       try {
-        const res = await fetch(targetUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) saved = true;
+        if (isGoogleAppsScript) {
+          // Google Apps Script requires text/plain and no-cors mode to bypass CORS blocks
+          await fetch(targetUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+          });
+          saved = true;
+        } else {
+          const res = await fetch(targetUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) saved = true;
+        }
       } catch (err) {
         saved = false;
       }
@@ -2769,6 +2841,95 @@
       a.download = `nearmiss_offline_backup_${new Date().toISOString().substring(0, 10)}.json`;
       a.click();
     });
+
+    // --- Cloud Sync & Webhook Modal Logic ---
+    function openCloudConfigModal() {
+      const storedWebhook = localStorage.getItem('nearmiss_cloud_webhook') || (window.NEARMISS_CONFIG ? (window.NEARMISS_CONFIG.googleSheetsWebhookUrl || window.NEARMISS_CONFIG.sharepointWebhookUrl) : '');
+      const storedMode = localStorage.getItem('nearmiss_cloud_mode') || 'auto';
+      if (dom.cloudWebhookInput) dom.cloudWebhookInput.value = storedWebhook;
+      if (dom.cloudStorageModeSelect) dom.cloudStorageModeSelect.value = storedMode;
+
+      const queue = JSON.parse(localStorage.getItem('nearmiss_offline_queue') || '[]');
+      if (dom.pendingSyncCount) dom.pendingSyncCount.textContent = queue.length;
+      if (dom.cloudModalOverlay) dom.cloudModalOverlay.classList.add('open');
+    }
+
+    function closeCloudConfigModal() {
+      if (dom.cloudModalOverlay) dom.cloudModalOverlay.classList.remove('open');
+    }
+
+    if (dom.cloudConfigBtn) dom.cloudConfigBtn.addEventListener('click', openCloudConfigModal);
+    if (dom.btnCloseCloudModal) dom.btnCloseCloudModal.addEventListener('click', closeCloudConfigModal);
+    if (dom.btnCancelCloudModal) dom.btnCancelCloudModal.addEventListener('click', closeCloudConfigModal);
+    if (dom.cloudModalOverlay) {
+      dom.cloudModalOverlay.addEventListener('click', (e) => {
+        if (e.target === dom.cloudModalOverlay) closeCloudConfigModal();
+      });
+    }
+
+    if (dom.btnSaveCloudConfig) {
+      dom.btnSaveCloudConfig.addEventListener('click', () => {
+        const val = dom.cloudWebhookInput.value.trim();
+        const mode = dom.cloudStorageModeSelect.value;
+        localStorage.setItem('nearmiss_cloud_webhook', val);
+        localStorage.setItem('nearmiss_cloud_mode', mode);
+        closeCloudConfigModal();
+        showToast(val ? 'Cloud Webhook connected successfully' : 'Reset to default storage mode', 'CONFIG');
+      });
+    }
+
+    if (dom.btnSyncOfflineNow) {
+      dom.btnSyncOfflineNow.addEventListener('click', async () => {
+        const queue = JSON.parse(localStorage.getItem('nearmiss_offline_queue') || '[]');
+        if (queue.length === 0) {
+          alert('No pending offline records to sync.');
+          return;
+        }
+
+        const storedWebhook = localStorage.getItem('nearmiss_cloud_webhook') || (window.NEARMISS_CONFIG ? (window.NEARMISS_CONFIG.googleSheetsWebhookUrl || window.NEARMISS_CONFIG.sharepointWebhookUrl) : '');
+        const targetUrl = storedWebhook || ((window.NEARMISS_CONFIG ? window.NEARMISS_CONFIG.localBridgeUrl : 'http://localhost:8088') + '/api/nearmiss');
+        const isGoogleAppsScript = targetUrl.includes('script.google.com');
+
+        dom.btnSyncOfflineNow.disabled = true;
+        dom.btnSyncOfflineNow.textContent = 'Syncing...';
+
+        let successCount = 0;
+        const remainingQueue = [];
+
+        for (const item of queue) {
+          try {
+            if (isGoogleAppsScript) {
+              await fetch(targetUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(item)
+              });
+              successCount++;
+            } else {
+              const res = await fetch(targetUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+              });
+              if (res.ok) successCount++;
+              else remainingQueue.push(item);
+            }
+          } catch (e) {
+            remainingQueue.push(item);
+          }
+        }
+
+        localStorage.setItem('nearmiss_offline_queue', JSON.stringify(remainingQueue));
+        updateOfflineBadge();
+        if (dom.pendingSyncCount) dom.pendingSyncCount.textContent = remainingQueue.length;
+        dom.btnSyncOfflineNow.disabled = false;
+        dom.btnSyncOfflineNow.textContent = `⚡ Sync Pending (${remainingQueue.length})`;
+
+        closeCloudConfigModal();
+        showToast(`Synced ${successCount} offline record(s) to central spreadsheet`, 'SYNC');
+      });
+    }
 
     function resetForm(preserveSticky = true) {
       state.errorDrug = null;

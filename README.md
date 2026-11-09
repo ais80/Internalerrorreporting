@@ -60,3 +60,4 @@ http://localhost:8088/Near-Miss-Logger.html
 2. Open the mobile URL displayed in the console (e.g. `http://<IP>:8088/Near-Miss-Logger.html?site=GHH`).
 3. Tap **"Share" -> "Add to Home Screen"** on iOS or **"Install App"** on Android to run full-screen.
 4. Tap the **📷 Camera Scan** button to scan medicine pack barcodes.
+
