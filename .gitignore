@@ -1,0 +1,17 @@
+# Node / Temp / Backups
+*.bak*
+*.tmp
+_backup*
+_old/
+
+# Live incident data & runtime directories
+data/events/
+data/_backups/
+data/_import_queue/
+
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

@@ -1,0 +1,16 @@
+﻿{
+  "buildDurationMs": 11798,
+  "gtinTotal": 101478,
+  "gtinResolved": 101478,
+  "gtinResolutionPercent": 100.00,
+  "cmmTotalRows": 10125,
+  "cmmUniqueCodes": 7599,
+  "nationalVmpAdded": 21210,
+  "brandAmpAdded": 470,
+  "totalConcepts": 29279,
+  "vtmSiblingGroups": 3122,
+  "uniquePackStrings": 1670,
+  "fileSizeBytes": 12120377,
+  "fileSizeMb": 11.56,
+  "fileSizeUnder12Mb": true
+}

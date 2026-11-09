@@ -1,0 +1,30 @@
+{
+    "lastConsolidatedAt":  "2026-11-09T12:39:42.2451419+00:00",
+    "siteBreakdown":  {
+                          "Queen Elizabeth":  1,
+                          "Heartlands":  1
+                      },
+    "totalNearMisses":  2,
+    "topLasaPairs":  [
+                         {
+                             "pair":  "Propranolol 40mg tablets (Accord-UK Ltd) 28 tablet -\u003e Propranolol 10mg tablets (Accord-UK Ltd) 28 tablet",
+                             "count":  1
+                         },
+                         {
+                             "pair":  "Adoport 1mg capsules (Sandoz Ltd) 50 capsule -\u003e Prograf 1mg capsules (Astellas Pharma Ltd) 50 capsule",
+                             "count":  1
+                         }
+                     ],
+    "ntiIncidentCount":  1,
+    "expiredScansCount":  0,
+    "categoryBreakdown":  {
+                              "Selection Error":  1,
+                              "Wrong Strength":  1,
+                              "Wrong Brand":  1,
+                              "NTI Brand Substitution":  1
+                          },
+    "typeBreakdown":  {
+                          "Clinical":  0,
+                          "Dispensing":  2
+                      }
+}

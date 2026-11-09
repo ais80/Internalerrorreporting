@@ -1,0 +1,19 @@
+{
+  "name": "NHS Near Miss Reporting & Safety",
+  "short_name": "Near Miss",
+  "description": "Checking bench & mobile near miss reporting PWA with 2D GS1 barcode scanning and dm+d intelligence",
+  "start_url": "./Near-Miss-Logger.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#005eb8",
+  "theme_color": "#005eb8",
+  "categories": ["medical", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%23005eb8'/%3E%3Cpath d='M256 110v292M110 256h292' stroke='%23ffffff' stroke-width='60' stroke-linecap='round'/%3E%3Ccircle cx='380' cy='140' r='32' fill='%23009639'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

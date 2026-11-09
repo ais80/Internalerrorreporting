@@ -1,0 +1,50 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/sharepoint/v1/list-formatting.schema.json",
+  "listName": "Pharmacy Near Miss Log",
+  "description": "UHBFT Pharmacy Near Miss Reporting & Learning Audit Trail (Option 4 M365)",
+  "columns": [
+    { "internalName": "Title", "displayName": "Event ID", "type": "Text", "required": true, "indexed": true },
+    { "internalName": "SubmittedAt", "displayName": "Submitted At", "type": "DateTime", "format": "ISO8601" },
+    { "internalName": "Site", "displayName": "Hospital Site", "type": "Choice", "choices": ["Queen Elizabeth", "Heartlands", "Good Hope", "Solihull", "Other"] },
+    { "internalName": "SiteOther", "displayName": "Other Site Details", "type": "Text" },
+    { "internalName": "NearMissType", "displayName": "Near Miss Type", "type": "Choice", "choices": ["Dispensing", "Clinical"] },
+    { "internalName": "IsSatelliteUnit", "displayName": "Satellite Unit", "type": "Choice", "choices": ["Yes", "No"] },
+    { "internalName": "SatelliteUnitName", "displayName": "Satellite Name", "type": "Text" },
+    { "internalName": "CompletedBy", "displayName": "Completed By (Initials)", "type": "Text" },
+    { "internalName": "CompletedOn", "displayName": "Completed On", "type": "Text" },
+    { "internalName": "TimeOfDay", "displayName": "Time of Day", "type": "Choice", "choices": ["Before 9am", "9-10am", "10-11am", "11-12am", "12-1pm", "1-2pm", "2-3pm", "3-4pm", "4-5pm", "After 5pm"] },
+    { "internalName": "ErrorCategories", "displayName": "Error Categories", "type": "MultiChoice", "choices": [
+      "Wrong Medication (Drug)", "Wrong Strength", "Wrong Form", "Wrong Brand (NTI)", "Wrong Quantity", "Out of Date",
+      "Wrong Dose", "Wrong Frequency", "Wrong Duration", "Wrong Labelling Directions (Other)", "Wrong Patient Details", "Wrong Location / Ward",
+      "Dose Error (Renal / Hepatic / Weight / Age)", "Wrong Dose / Strength / Frequency Prescribed", "Drug-Drug Interaction",
+      "Allergy / Cross-Sensitivity", "Omission of Critical / Regular Medication", "Therapeutic Duplication", "Contraindication",
+      "Wrong Formulation / Route Prescribed", "High-Risk / VTE / Anticoagulant / Insulin Error", "TDM / Monitoring / Other Clinical"
+    ]},
+    { "internalName": "ErrorDrugName", "displayName": "Error Medication Name", "type": "Text" },
+    { "internalName": "ErrorDrugCMM", "displayName": "Error CMM Code", "type": "Text" },
+    { "internalName": "ErrorDrugVTMID", "displayName": "Error VTMID", "type": "Text" },
+    { "internalName": "ErrorDrugVTMName", "displayName": "Error Generic Molecule", "type": "Text" },
+    { "internalName": "ErrorDrugVMPID", "displayName": "Error VMPID", "type": "Text" },
+    { "internalName": "ErrorDrugVMPName", "displayName": "Error VMP Name", "type": "Text" },
+    { "internalName": "ErrorDrugAMPID", "displayName": "Error AMPID", "type": "Text" },
+    { "internalName": "ErrorDrugAMPPID", "displayName": "Error AMPPID", "type": "Text" },
+    { "internalName": "ErrorDrugGTIN14", "displayName": "Error GTIN14 Barcode", "type": "Text", "indexed": true },
+    { "internalName": "ErrorDrugBatch", "displayName": "Error Batch Number", "type": "Text" },
+    { "internalName": "ErrorDrugExpiry", "displayName": "Error Expiry Date", "type": "Text" },
+    { "internalName": "ErrorDrugIsExpired", "displayName": "Error Was Expired", "type": "Choice", "choices": ["Yes", "No"] },
+    { "internalName": "ErrorDrugIsNTI", "displayName": "Error Is NTI Drug", "type": "Choice", "choices": ["Yes", "No"] },
+    { "internalName": "IntendedDrugName", "displayName": "Intended Medication Name", "type": "Text" },
+    { "internalName": "IntendedDrugCMM", "displayName": "Intended CMM Code", "type": "Text" },
+    { "internalName": "IntendedDrugVTMID", "displayName": "Intended VTMID", "type": "Text" },
+    { "internalName": "IntendedDrugVMPID", "displayName": "Intended VMPID", "type": "Text" },
+    { "internalName": "IntendedDrugAMPID", "displayName": "Intended AMPID", "type": "Text" },
+    { "internalName": "IntendedDrugIsNTI", "displayName": "Intended Is NTI Drug", "type": "Choice", "choices": ["Yes", "No"] },
+    { "internalName": "QuantityDispensed", "displayName": "Quantity Dispensed", "type": "Text" },
+    { "internalName": "QuantityPrescribed", "displayName": "Quantity Prescribed", "type": "Text" },
+    { "internalName": "ContributingFactors", "displayName": "Contributing Factors", "type": "MultiChoice", "choices": [
+      "Similar Packaging / Look-Alike", "Sound-Alike Name", "Robot Pick Error", "Split Pack / Owings",
+      "High Workload / Interruption", "Handwritten / Unclear Rx", "PICS Selection Error"
+    ]},
+    { "internalName": "LearningNote", "displayName": "Learning Note (Zero PID)", "type": "Note", "numberOfLines": 4 }
+  ]
+}

@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UHBFT Pharmacy - Near Miss & Safety Learning Analytics</title>
+  <style>
+    :root {
+      --nhs-blue: #005eb8;
+      --nhs-dark-blue: #002f6c;
+      --nhs-bright-blue: #0072ce;
+      --nhs-light-blue: #41b6e6;
+      --nhs-green: #007f3b;
+      --nhs-light-green: #eaf6ec;
+      --nhs-red: #d5281b;
+      --nhs-light-red: #fde8e7;
+      --nhs-amber: #ed8b00;
+      --nhs-light-amber: #fef3e5;
+      --nhs-grey-1: #425563;
+      --nhs-grey-2: #768692;
+      --nhs-grey-4: #d8dde0;
+      --nhs-grey-5: #f0f4f5;
+      --nhs-white: #ffffff;
+
+      --bg-page: #f0f4f5;
+      --bg-card: #ffffff;
+      --bg-subtle: #f8fafb;
+      --text-main: #212b32;
+      --text-muted: #4c6272;
+      --border-color: #d8dde0;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    body.dark-mode {
+      --bg-page: #12191f;
+      --bg-card: #1c2630;
+      --bg-subtle: #24313d;
+      --text-main: #e8edee;
+      --text-muted: #aeb7bd;
+      --border-color: #384857;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-size: 14px;
+    }
+
+    /* Header */
+    header.dashboard-header {
+      background: var(--nhs-dark-blue);
+      color: var(--nhs-white);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nhs-badge {
+      background: #005eb8;
+      color: #fff;
+      font-weight: 800;
+      font-size: 18px;
+      padding: 2px 8px;
+      border-radius: 2px;
+      letter-spacing: -0.5px;
+    }
+    .header-titles h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .header-titles p {
+      font-size: 12px;
+      color: var(--nhs-light-blue);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-header {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-header:hover { background: rgba(255, 255, 255, 0.25); }
+
+    /* Main Surface */
+    main.dashboard-body {
+      max-width: 1300px;
+      margin: 20px auto;
+      padding: 0 20px 60px 20px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* KPI Summary Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-left: 4px solid var(--nhs-blue);
+    }
+    .kpi-card.kpi-green { border-left-color: var(--nhs-green); }
+    .kpi-card.kpi-amber { border-left-color: var(--nhs-amber); }
+    .kpi-card.kpi-red { border-left-color: var(--nhs-red); }
+
+    .kpi-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin: 8px 0 4px 0;
+      line-height: 1;
+    }
+    .kpi-subtext {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Section Cards */
+    .dashboard-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .card-head h2 {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Filters Bar */
+    .filters-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 14px;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .filter-select, .filter-input {
+      padding: 5px 8px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 12px;
+      outline: none;
+    }
+    .filter-input { min-width: 200px; }
+
+    /* Tables */
+    .table-responsive {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    table.data-table th {
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      font-weight: 700;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+      font-size: 12px;
+    }
+    table.data-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+    table.data-table tr:last-child td { border-bottom: none; }
+    table.data-table tr:hover td { background: var(--bg-subtle); }
+
+    /* Heatmap Table */
+    table.heatmap-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: center;
+    }
+    table.heatmap-table th {
+      padding: 8px 6px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    table.heatmap-table td {
+      padding: 10px 6px;
+      border: 1px solid var(--border-color);
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    table.heatmap-table td.site-col {
+      text-align: left;
+      font-weight: 700;
+      background: var(--bg-subtle);
+      white-space: nowrap;
+      padding-left: 10px;
+    }
+
+    .heat-0 { background: var(--bg-card); color: var(--text-muted); font-weight: normal; }
+    .heat-1 { background: #e3f2fd; color: #0d47a1; }
+    .heat-2 { background: #bbdefb; color: #0d47a1; }
+    .heat-3 { background: #90caf9; color: #0d47a1; }
+    .heat-4 { background: #ffcc80; color: #e65100; font-weight: 700; }
+    .heat-5 { background: #ffab91; color: #bf360c; font-weight: 800; }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-blue { background: #e3f2fd; color: #005eb8; }
+    .badge-green { background: var(--nhs-light-green); color: var(--nhs-green); }
+    .badge-amber { background: var(--nhs-light-amber); color: #a35b00; }
+    .badge-red { background: var(--nhs-light-red); color: var(--nhs-red); }
+
+    .lasa-arrow {
+      color: var(--nhs-blue);
+      font-weight: 800;
+      margin: 0 4px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 36px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .empty-state h3 { font-size: 15px; margin-bottom: 6px; color: var(--text-main); }
+    .empty-state p { font-size: 12px; }
+
+    /* Drag & Drop Overlay */
+    .drop-banner {
+      border: 2px dashed var(--nhs-blue);
+      background: rgba(0, 94, 184, 0.04);
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      color: var(--nhs-blue);
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .drop-banner:hover { background: rgba(0, 94, 184, 0.08); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="brand-wrap">
+      <div class="nhs-badge">NHS</div>
+      <div class="header-titles">
+        <h1>Near Miss &amp; Safety Learning Analytics</h1>
+        <p>University Hospitals Birmingham NHS Foundation Trust &bull; Pharmacy Governance</p>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <a href="Near-Miss-Logger.html" class="btn-header" target="_blank">
+        <span>+ Open Logger</span>
+      </a>
+      <button type="button" class="btn-header" id="btnExportCsv">
+        <span>📥 Export CSV</span>
+      </button>
+      <button type="button" class="btn-header" id="themeToggleBtn">🌓</button>
+    </div>
+  </header>
+
+  <!-- Main Body -->
+  <main class="dashboard-body">
+
+    <!-- KPI Cards Row -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Near Misses</div>
+        <div class="kpi-value" id="kpiTotal">0</div>
+        <div class="kpi-subtext" id="kpiTotalSub">All consolidated records</div>
+      </div>
+
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label">Dispensing vs Clinical</div>
+        <div class="kpi-value" id="kpiSplit">0 / 0</div>
+        <div class="kpi-subtext" id="kpiSplitSub">Dispensing / Clinical count</div>
+      </div>
+
+      <div class="kpi-card kpi-amber">
+        <div class="kpi-label">NTI / Brand-Critical</div>
+        <div class="kpi-value" id="kpiNti">0</div>
+        <div class="kpi-subtext">Tacrolimus, Lithium, etc.</div>
+      </div>
+
+      <div class="kpi-card kpi-red">
+        <div class="kpi-label">Expired Stock Catches</div>
+        <div class="kpi-value" id="kpiExpired">0</div>
+        <div class="kpi-subtext">Interceptions at checking bench</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Top Error Category</div>
+        <div class="kpi-value" style="font-size:18px; margin: 12px 0 6px 0;" id="kpiTopCategory">&mdash;</div>
+        <div class="kpi-subtext" id="kpiTopCategorySub">Most frequent mechanism</div>
+      </div>
+    </section>
+
+    <!-- LASA & Confusion Pairs Table -->
+    <section class="dashboard-card">
+      <div class="card-head">
+        <h2>💊 Top Look-Alike Sound-Alike (LASA) &amp; Confusion Pairs</h2>
+        <span class="badge badge-blue" id="lasaCountBadge">0 pairs detected</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table" id="lasaTable">
+          <thead>
+            <tr>
+              <th>Frequency</th>
+              <th>Implicated / Error Medication</th>
+              <th></th>
+              <th>Intended / Correct Medication</th>
+              <th>Primary Error Mechanism</th>
+            </tr>
+          </thead>
+          <tbody id="lasaTableBody">
+            <tr><td colspan="5" class="empty-state">No confusion pairs recorded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Site & Time-of-Day Heatmap Matrix -->
+    <section class="dashboard-card">
+      <div class="card-head">
+        <h2>🕒 Time-of-Day &amp; Site Risk Matrix</h2>
+        <span class="badge badge-amber">Bench Workflow Heatmap</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="heatmap-table" id="heatmapTable">
+          <thead>
+            <tr>
+              <th>Hospital Site</th>
+              <th>Before 9am</th>
+              <th>9-10am</th>
+              <th>10-11am</th>
+              <th>11-12am</th>
+              <th>12-1pm</th>
+              <th>1-2pm</th>
+              <th>2-3pm</th>
+              <th>3-4pm</th>
+              <th>4-5pm</th>
+              <th>After 5pm</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="heatmapTableBody">
+            <!-- Injected via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Filterable Near Miss Log Explorer -->
+    <section class="dashboard-card">
+      <div class="card-head">
+        <h2>📋 Near Miss Incident Explorer</h2>
+        <span class="badge badge-blue" id="filteredCountBadge">Showing 0 records</span>
+      </div>
+
+      <!-- Filters Toolbar -->
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label class="filter-label" for="searchFilter">Search:</label>
+          <input type="text" class="filter-input" id="searchFilter" placeholder="Filter by drug, code, checker...">
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label" for="siteFilter">Site:</label>
+          <select class="filter-select" id="siteFilter">
+            <option value="ALL">All Sites</option>
+            <option value="Queen Elizabeth">Queen Elizabeth</option>
+            <option value="Heartlands">Heartlands</option>
+            <option value="Good Hope">Good Hope</option>
+            <option value="Solihull">Solihull</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label" for="typeFilter">Type:</label>
+          <select class="filter-select" id="typeFilter">
+            <option value="ALL">All Types</option>
+            <option value="Dispensing">Dispensing</option>
+            <option value="Clinical">Clinical</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label" for="ntiFilter">NTI Only:</label>
+          <select class="filter-select" id="ntiFilter">
+            <option value="ALL">All Drugs</option>
+            <option value="YES">NTI / Brand-Critical Only</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table" id="eventsTable">
+          <thead>
+            <tr>
+              <th>Event ID</th>
+              <th>Date &amp; Time</th>
+              <th>Site</th>
+              <th>Type</th>
+              <th>Error Medication</th>
+              <th>Intended Medication</th>
+              <th>Categories</th>
+              <th>Checker</th>
+              <th>Contributing Factors &amp; Note</th>
+            </tr>
+          </thead>
+          <tbody id="eventsTableBody">
+            <tr><td colspan="9" class="empty-state">No events recorded. Use the Checking Bench Logger to record near misses.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Drag & Drop Queue Ingest -->
+      <div class="drop-banner" id="dropBanner">
+        <span>📂 Drop exported JSON or CSV backup files here to view in browser</span>
+        <input type="file" id="fileInput" accept=".json,.csv" style="display:none;">
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Load Master Shared Data -->
+  <script src="nearmiss_shared_data.js"></script>
+
+  <!-- Analytics Logic -->
+  <script>
+  (function() {
+    'use strict';
+
+    let allEvents = [];
+    if (window.NEARMISS_SHARED_DATA && Array.isArray(window.NEARMISS_SHARED_DATA)) {
+      allEvents = window.NEARMISS_SHARED_DATA;
+    }
+
+    const dom = {
+      kpiTotal: document.getElementById('kpiTotal'),
+      kpiTotalSub: document.getElementById('kpiTotalSub'),
+      kpiSplit: document.getElementById('kpiSplit'),
+      kpiSplitSub: document.getElementById('kpiSplitSub'),
+      kpiNti: document.getElementById('kpiNti'),
+      kpiExpired: document.getElementById('kpiExpired'),
+      kpiTopCategory: document.getElementById('kpiTopCategory'),
+      kpiTopCategorySub: document.getElementById('kpiTopCategorySub'),
+
+      lasaCountBadge: document.getElementById('lasaCountBadge'),
+      lasaTableBody: document.getElementById('lasaTableBody'),
+      heatmapTableBody: document.getElementById('heatmapTableBody'),
+
+      filteredCountBadge: document.getElementById('filteredCountBadge'),
+      searchFilter: document.getElementById('searchFilter'),
+      siteFilter: document.getElementById('siteFilter'),
+      typeFilter: document.getElementById('typeFilter'),
+      ntiFilter: document.getElementById('ntiFilter'),
+      eventsTableBody: document.getElementById('eventsTableBody'),
+
+      btnExportCsv: document.getElementById('btnExportCsv'),
+      themeToggleBtn: document.getElementById('themeToggleBtn'),
+      dropBanner: document.getElementById('dropBanner'),
+      fileInput: document.getElementById('fileInput')
+    };
+
+    function updateDashboard() {
+      // 1. KPIs
+      const total = allEvents.length;
+      dom.kpiTotal.textContent = total;
+
+      let dispensingCount = 0;
+      let clinicalCount = 0;
+      let ntiCount = 0;
+      let expiredCount = 0;
+      const catCounts = {};
+      const lasaMap = {};
+
+      allEvents.forEach((ev) => {
+        if (ev.nearMissType === 'Clinical') clinicalCount++; else dispensingCount++;
+
+        if (ev.errorDrug) {
+          if (ev.errorDrug.isNti) ntiCount++;
+          if (ev.errorDrug.isExpiredAtScan) expiredCount++;
+
+          if (ev.intendedDrug && ev.intendedDrug.displayName) {
+            const pairKey = `${ev.errorDrug.displayName} || ${ev.intendedDrug.displayName}`;
+            if (!lasaMap[pairKey]) {
+              lasaMap[pairKey] = {
+                errorDrug: ev.errorDrug.displayName,
+                intendedDrug: ev.intendedDrug.displayName,
+                count: 0,
+                categories: new Set()
+              };
+            }
+            lasaMap[pairKey].count++;
+            if (ev.errorCategories) ev.errorCategories.forEach(c => lasaMap[pairKey].categories.add(c));
+          }
+        }
+
+        if (ev.errorCategories) {
+          ev.errorCategories.forEach((cat) => {
+            catCounts[cat] = (catCounts[cat] || 0) + 1;
+          });
+        }
+      });
+
+      dom.kpiSplit.textContent = `${dispensingCount} / ${clinicalCount}`;
+      dom.kpiNti.textContent = ntiCount;
+      dom.kpiExpired.textContent = expiredCount;
+
+      let topCat = '—';
+      let topCatCount = 0;
+      Object.keys(catCounts).forEach((c) => {
+        if (catCounts[c] > topCatCount) {
+          topCatCount = catCounts[c];
+          topCat = c;
+        }
+      });
+      dom.kpiTopCategory.textContent = topCat;
+      dom.kpiTopCategorySub.textContent = topCatCount > 0 ? `${topCatCount} occurrences` : 'No categories logged';
+
+      // 2. LASA Pairs Table
+      const lasaPairs = Object.values(lasaMap).sort((a, b) => b.count - a.count);
+      dom.lasaCountBadge.textContent = `${lasaPairs.length} pair${lasaPairs.length === 1 ? '' : 's'} detected`;
+      dom.lasaTableBody.innerHTML = '';
+
+      if (lasaPairs.length === 0) {
+        dom.lasaTableBody.innerHTML = '<tr><td colspan="5" class="empty-state">No confusion pairs recorded yet.</td></tr>';
+      } else {
+        lasaPairs.forEach((p) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><span class="badge badge-amber">${p.count}x</span></td>
+            <td><strong>${p.errorDrug}</strong></td>
+            <td style="text-align:center;"><span class="lasa-arrow">&rarr;</span></td>
+            <td><strong style="color:var(--nhs-green);">${p.intendedDrug}</strong></td>
+            <td><span class="badge badge-blue">${Array.from(p.categories).join(', ') || 'Selection'}</span></td>
+          `;
+          dom.lasaTableBody.appendChild(tr);
+        });
+      }
+
+      // 3. Heatmap Matrix
+      renderHeatmap();
+
+      // 4. Explorer Table
+      renderExplorerTable();
+    }
+
+    const TIME_BUCKETS = ['Before 9am', '9-10am', '10-11am', '11-12am', '12-1pm', '1-2pm', '2-3pm', '3-4pm', '4-5pm', 'After 5pm'];
+    const SITES = ['Queen Elizabeth', 'Heartlands', 'Good Hope', 'Solihull', 'Other'];
+
+    function renderHeatmap() {
+      const matrix = {};
+      SITES.forEach(s => {
+        matrix[s] = {};
+        TIME_BUCKETS.forEach(b => matrix[s][b] = 0);
+      });
+
+      allEvents.forEach((ev) => {
+        const s = matrix[ev.site] ? ev.site : 'Other';
+        const b = matrix[s][ev.timeOfDay] !== undefined ? ev.timeOfDay : 'Before 9am';
+        matrix[s][b]++;
+      });
+
+      dom.heatmapTableBody.innerHTML = '';
+      SITES.forEach((site) => {
+        const tr = document.createElement('tr');
+        let rowHtml = `<td class="site-col">${site}</td>`;
+        let siteTotal = 0;
+
+        TIME_BUCKETS.forEach((bucket) => {
+          const val = matrix[site][bucket];
+          siteTotal += val;
+          let heatClass = 'heat-0';
+          if (val === 1) heatClass = 'heat-1';
+          else if (val >= 2 && val <= 3) heatClass = 'heat-2';
+          else if (val >= 4 && val <= 6) heatClass = 'heat-3';
+          else if (val >= 7 && val <= 10) heatClass = 'heat-4';
+          else if (val > 10) heatClass = 'heat-5';
+
+          rowHtml += `<td class="${heatClass}">${val > 0 ? val : '&middot;'}</td>`;
+        });
+
+        rowHtml += `<td style="font-weight:700; background:var(--bg-subtle);">${siteTotal}</td>`;
+        tr.innerHTML = rowHtml;
+        dom.heatmapTableBody.appendChild(tr);
+      });
+    }
+
+    function renderExplorerTable() {
+      const q = dom.searchFilter.value.trim().toLowerCase();
+      const siteF = dom.siteFilter.value;
+      const typeF = dom.typeFilter.value;
+      const ntiF = dom.ntiFilter.value;
+
+      const filtered = allEvents.filter((ev) => {
+        if (siteF !== 'ALL' && ev.site !== siteF) return false;
+        if (typeF !== 'ALL' && ev.nearMissType !== typeF) return false;
+        if (ntiF === 'YES' && (!ev.errorDrug || !ev.errorDrug.isNti)) return false;
+
+        if (q) {
+          const str = `${ev.eventId} ${ev.site} ${ev.nearMissType} ${ev.completedBy} ${ev.errorCategories ? ev.errorCategories.join(' ') : ''} ${ev.errorDrug ? ev.errorDrug.displayName : ''} ${ev.intendedDrug ? ev.intendedDrug.displayName : ''} ${ev.learningNote || ''}`.toLowerCase();
+          if (!str.includes(q)) return false;
+        }
+        return true;
+      });
+
+      dom.filteredCountBadge.textContent = `Showing ${filtered.length} of ${allEvents.length} records`;
+      dom.eventsTableBody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        dom.eventsTableBody.innerHTML = '<tr><td colspan="9" class="empty-state">No matching near-miss events found.</td></tr>';
+        return;
+      }
+
+      // Display most recent first
+      filtered.slice().reverse().forEach((ev) => {
+        const tr = document.createElement('tr');
+        const errName = ev.errorDrug ? ev.errorDrug.displayName : '—';
+        const intName = ev.intendedDrug ? ev.intendedDrug.displayName : '—';
+        const cats = ev.errorCategories ? ev.errorCategories.join(', ') : '—';
+        const factors = ev.contributingFactors ? ev.contributingFactors.join(', ') : '';
+        const isNti = ev.errorDrug && ev.errorDrug.isNti;
+        const isExpired = ev.errorDrug && ev.errorDrug.isExpiredAtScan;
+
+        tr.innerHTML = `
+          <td><code>${ev.eventId}</code></td>
+          <td>${ev.completedOn || ''} ${ev.timeOfDay || ''}</td>
+          <td><span class="badge badge-blue">${ev.site}</span></td>
+          <td><span class="badge ${ev.nearMissType === 'Clinical' ? 'badge-amber' : 'badge-green'}">${ev.nearMissType}</span></td>
+          <td>
+            <strong>${errName}</strong>
+            ${isNti ? '<span class="badge badge-amber" style="margin-left:4px;">NTI</span>' : ''}
+            ${isExpired ? '<span class="badge badge-red" style="margin-left:4px;">EXPIRED</span>' : ''}
+          </td>
+          <td>${intName !== '—' ? `<strong style="color:var(--nhs-green);">${intName}</strong>` : '<span style="color:var(--text-muted);">&mdash;</span>'}</td>
+          <td><span class="badge badge-blue">${cats}</span></td>
+          <td>${ev.completedBy || '<span style="color:var(--text-muted);">&mdash;</span>'}</td>
+          <td style="font-size:12px;">
+            ${factors ? `<div><strong>Factors:</strong> ${factors}</div>` : ''}
+            ${ev.learningNote ? `<div style="color:var(--text-muted); font-style:italic;">"${ev.learningNote}"</div>` : ''}
+          </td>
+        `;
+        dom.eventsTableBody.appendChild(tr);
+      });
+    }
+
+    // Filter Listeners
+    dom.searchFilter.addEventListener('input', renderExplorerTable);
+    dom.siteFilter.addEventListener('change', renderExplorerTable);
+    dom.typeFilter.addEventListener('change', renderExplorerTable);
+    dom.ntiFilter.addEventListener('change', renderExplorerTable);
+
+    // Export CSV
+    dom.btnExportCsv.addEventListener('click', () => {
+      if (allEvents.length === 0) {
+        alert('No records available to export.');
+        return;
+      }
+
+      const cols = ['eventId', 'submittedAtIso', 'site', 'nearMissType', 'isSatelliteUnit', 'completedBy', 'completedOn', 'timeOfDay', 'errorDrug', 'intendedDrug', 'errorCategories', 'contributingFactors', 'learningNote'];
+      let csv = '\uFEFF' + cols.join(',') + '\n';
+
+      allEvents.forEach((ev) => {
+        const row = [
+          `"${ev.eventId || ''}"`,
+          `"${ev.submittedAtIso || ''}"`,
+          `"${ev.site || ''}"`,
+          `"${ev.nearMissType || ''}"`,
+          `"${ev.isSatelliteUnit || ''}"`,
+          `"${ev.completedBy || ''}"`,
+          `"${ev.completedOn || ''}"`,
+          `"${ev.timeOfDay || ''}"`,
+          `"${ev.errorDrug ? ev.errorDrug.displayName.replace(/"/g, '""') : ''}"`,
+          `"${ev.intendedDrug ? ev.intendedDrug.displayName.replace(/"/g, '""') : ''}"`,
+          `"${ev.errorCategories ? ev.errorCategories.join('; ').replace(/"/g, '""') : ''}"`,
+          `"${ev.contributingFactors ? ev.contributingFactors.join('; ').replace(/"/g, '""') : ''}"`,
+          `"${ev.learningNote ? ev.learningNote.replace(/"/g, '""') : ''}"`
+        ];
+        csv += row.join(',') + '\n';
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Near_Miss_Master_Export_${new Date().toISOString().substring(0, 10)}.csv`;
+      a.click();
+    });
+
+    // Theme toggle
+    dom.themeToggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('nearmiss_dark_mode', document.body.classList.contains('dark-mode'));
+    });
+    if (localStorage.getItem('nearmiss_dark_mode') === 'true') {
+      document.body.classList.add('dark-mode');
+    }
+
+    // Drag and Drop files
+    dom.dropBanner.addEventListener('click', () => dom.fileInput.click());
+    dom.fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+    });
+
+    window.addEventListener('dragover', (e) => e.preventDefault());
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (Array.isArray(parsed)) {
+            allEvents = parsed;
+            updateDashboard();
+            alert(`Loaded ${parsed.length} near miss records from ${file.name}`);
+          } else if (parsed.eventId) {
+            allEvents.push(parsed);
+            updateDashboard();
+            alert(`Added event ${parsed.eventId} from ${file.name}`);
+          }
+        } catch(err) {
+          alert('Could not parse file as JSON: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    updateDashboard();
+  })();
+  </script>
+</body>
+</html>
