@@ -86,6 +86,29 @@
       gap: 12px;
     }
 
+    .workstation-main-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .session-details-drawer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .mobile-toggle-btn {
+      display: none !important;
+    }
+    .mobile-only {
+      display: none !important;
+    }
+    .desktop-only {
+      display: inline-block;
+    }
+
     .brand-group {
       display: flex;
       align-items: center;
@@ -1024,6 +1047,16 @@
        Mobile & Thumb-Optimized Experience (Smartphones & PWA)
        ============================================================ */
     @media (max-width: 768px) {
+      .desktop-only {
+        display: none !important;
+      }
+      .mobile-only {
+        display: inline-flex !important;
+      }
+      .mobile-toggle-btn {
+        display: inline-flex !important;
+      }
+
       /* Prevent iOS Safari 300ms tap delay & unwanted tap flash */
       html, body {
         touch-action: manipulation;
@@ -1031,55 +1064,88 @@
       }
 
       /* Compact, thumb-friendly sticky app bar */
-      .workstation-bar {
-        padding: 8px 12px;
+      header.workstation-bar {
+        padding: 6px 10px;
         flex-direction: column;
         align-items: stretch;
-        gap: 8px;
+        gap: 6px;
         position: sticky;
         top: 0;
         z-index: 1000;
         box-shadow: 0 2px 8px rgba(0,0,0,0.18);
       }
-      .brand-group {
+      .workstation-main-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         width: 100%;
+        gap: 8px;
+      }
+      .workstation-main-row .brand-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        min-width: 0;
       }
       .app-title-wrap h1 {
-        font-size: 14px;
+        font-size: 13.5px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
       .app-title-wrap p {
-        display: none; /* Hide subtitle to preserve precious vertical screen height */
+        display: none !important;
       }
-      .bench-profiles {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        overflow-x: auto;
-        padding-bottom: 2px;
-        scrollbar-width: none;
+      .workstation-main-row .sticky-pill {
+        padding: 3px 8px;
+        font-size: 11px;
       }
-      .bench-profiles::-webkit-scrollbar { display: none; }
+      .workstation-main-row .sticky-pill select {
+        font-size: 11px;
+        max-width: 105px;
+      }
       
       .mode-toggle-group {
         width: 100%;
         display: flex;
         background: rgba(0, 0, 0, 0.35);
-        border-radius: 24px;
-        padding: 3px;
+        border-radius: 20px;
+        padding: 2px;
       }
       .mode-toggle-btn {
         flex: 1;
-        padding: 8px 12px;
+        padding: 7px 10px;
         font-size: 13px;
+        font-weight: 700;
         text-align: center;
-        min-height: 38px;
-        border-radius: 20px;
+        min-height: 36px;
+        border-radius: 18px;
+      }
+
+      /* Collapsible Session Details Drawer (Initials, Satellite, Time) */
+      .session-details-drawer {
+        display: none;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px 6px 6px 6px;
+        border-top: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(0, 0, 0, 0.22);
+        border-radius: 8px;
+        margin-top: 4px;
+      }
+      .session-details-drawer.open {
+        display: flex !important;
+        animation: drawerSlide 0.2s ease-out;
+      }
+      @keyframes drawerSlide {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .btn-icon-subtle.active {
+        background: var(--nhs-bright-blue);
+        color: #fff;
       }
 
       /* Main container padding for thumb reach */
@@ -1296,18 +1362,17 @@
 
   <!-- Top Sticky Workstation / Session Header Bar -->
   <header class="workstation-bar" id="topHeader">
-    <div class="brand-group">
-      <div class="nhs-logo">NHS</div>
-      <div class="app-title-wrap">
-        <h1>Near Miss Reporting & Learning</h1>
-        <p>UHBFT Pharmacy Dispensing & Clinical Safety</p>
+    <div class="workstation-main-row">
+      <div class="brand-group">
+        <div class="nhs-logo">NHS</div>
+        <div class="app-title-wrap">
+          <h1>Near Miss</h1>
+          <p class="desktop-only">Dispensing &amp; Clinical Safety</p>
+        </div>
       </div>
-    </div>
 
-    <!-- Sticky Bench Profiles -->
-    <div class="bench-profiles">
-      <!-- Site selector -->
-      <div class="sticky-pill" title="Bench Hospital Site">
+      <!-- Site selector pill (Always visible on mobile & desktop) -->
+      <div class="sticky-pill" title="Hospital Site">
         <span>🏥</span>
         <select id="siteSelect">
           <option value="Queen Elizabeth">Queen Elizabeth</option>
@@ -1318,6 +1383,26 @@
         </select>
       </div>
 
+      <!-- Status & Settings -->
+      <div class="status-actions">
+        <div class="offline-badge" id="offlineQueueBadge" title="Offline Queue - click to export">Offline: 0</div>
+        <button type="button" class="btn-icon-subtle" id="cloudConfigBtn" title="Cloud Sync Settings (Google Sheets / SharePoint Webhook)">☁️</button>
+        <button type="button" class="btn-icon-subtle mobile-toggle-btn" id="btnToggleMobileDetails" title="Toggle Session Details (Initials, Satellite, Time)" aria-expanded="false" style="gap:4px; font-size:11px; font-weight:700; padding:4px 9px; border-radius:14px; background:rgba(255,255,255,0.18); min-height:30px;">
+          <span>⚙️</span>
+          <span id="btnToggleMobileDetailsLabel">Details ▼</span>
+        </button>
+        <button type="button" class="btn-icon-subtle desktop-only" id="themeToggleBtn" title="Toggle Light / Dark mode">🌓</button>
+      </div>
+    </div>
+
+    <!-- Near Miss Type Toggle (Always visible, full-width on mobile) -->
+    <div class="mode-toggle-group">
+      <button type="button" class="mode-toggle-btn active" id="btnModeDispensing">Dispensing</button>
+      <button type="button" class="mode-toggle-btn" id="btnModeClinical">Clinical</button>
+    </div>
+
+    <!-- Collapsible Session Details (Satellite, Initials, Time-of-Day) -->
+    <div class="session-details-drawer" id="sessionDetailsDrawer">
       <!-- Satellite Unit Pill -->
       <div class="sticky-pill" id="satellitePill" title="Satellite Unit status">
         <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
@@ -1334,12 +1419,6 @@
         </select>
       </div>
 
-      <!-- Near Miss Type Toggle -->
-      <div class="mode-toggle-group">
-        <button type="button" class="mode-toggle-btn active" id="btnModeDispensing">Dispensing</button>
-        <button type="button" class="mode-toggle-btn" id="btnModeClinical">Clinical</button>
-      </div>
-
       <!-- Completed By Session Chip -->
       <div class="sticky-pill" id="completedByPill" title="Checker Initials / Role">
         <span>👤</span>
@@ -1347,7 +1426,7 @@
       </div>
 
       <!-- Auto Date / Time -->
-      <div class="sticky-pill" title="Incident Date & Time (auto-populated)">
+      <div class="sticky-pill" title="Incident Date &amp; Time (auto-populated)">
         <span>🕒</span>
         <span id="liveDateDisplay">09/11/2026</span>
         <select id="timeOfDaySelect" style="margin-left:4px;">
@@ -1363,13 +1442,8 @@
           <option value="After 5pm">After 5pm</option>
         </select>
       </div>
-    </div>
 
-    <!-- Status & Settings -->
-    <div class="status-actions">
-      <div class="offline-badge" id="offlineQueueBadge" title="Offline Queue - click to export">Offline: 0</div>
-      <button class="btn-icon-subtle" id="cloudConfigBtn" title="Cloud Sync Settings (Google Sheets / SharePoint Webhook)">☁️</button>
-      <button class="btn-icon-subtle" id="themeToggleBtn" title="Toggle Light / Dark mode">🌓</button>
+      <button type="button" class="btn-icon-subtle mobile-only" id="mobileThemeToggleBtn" title="Toggle Light / Dark mode" style="width:auto; padding:4px 10px; border-radius:16px;">🌓 Theme</button>
     </div>
   </header>
 
@@ -2898,6 +2972,33 @@
     });
     if (localStorage.getItem('nearmiss_dark_mode') === 'true') {
       document.body.classList.add('dark-mode');
+    }
+
+    // --- Mobile Collapsible Session Details Drawer ---
+    const btnToggleMobileDetails = document.getElementById('btnToggleMobileDetails');
+    const btnToggleMobileDetailsLabel = document.getElementById('btnToggleMobileDetailsLabel');
+    const sessionDetailsDrawer = document.getElementById('sessionDetailsDrawer');
+    if (btnToggleMobileDetails && sessionDetailsDrawer) {
+      btnToggleMobileDetails.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isOpen = sessionDetailsDrawer.classList.toggle('open');
+        btnToggleMobileDetails.classList.toggle('active', isOpen);
+        btnToggleMobileDetails.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (btnToggleMobileDetailsLabel) {
+          btnToggleMobileDetailsLabel.textContent = isOpen ? 'Details ▲' : 'Details ▼';
+        }
+        if (navigator.vibrate) {
+          try { navigator.vibrate(25); } catch(err) {}
+        }
+      });
+    }
+
+    const mobileThemeToggleBtn = document.getElementById('mobileThemeToggleBtn');
+    if (mobileThemeToggleBtn && dom.themeToggleBtn) {
+      mobileThemeToggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        dom.themeToggleBtn.click();
+      });
     }
 
     // --- Keyboard Hotkeys ---
