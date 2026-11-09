@@ -1020,11 +1020,275 @@
       background: var(--border-color);
     }
 
+    /* ============================================================
+       Mobile & Thumb-Optimized Experience (Smartphones & PWA)
+       ============================================================ */
     @media (max-width: 768px) {
-      .pill-grid { grid-template-columns: 1fr; }
-      .search-input-wrap { max-width: 100%; }
-      .scan-hud { flex-direction: column; align-items: stretch; }
-      .btn-camera-scan { width: 100%; justify-content: center; }
+      /* Prevent iOS Safari 300ms tap delay & unwanted tap flash */
+      html, body {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* Compact, thumb-friendly sticky app bar */
+      .workstation-bar {
+        padding: 8px 12px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      }
+      .brand-group {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+      }
+      .app-title-wrap h1 {
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .app-title-wrap p {
+        display: none; /* Hide subtitle to preserve precious vertical screen height */
+      }
+      .bench-profiles {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+      .bench-profiles::-webkit-scrollbar { display: none; }
+      
+      .mode-toggle-group {
+        width: 100%;
+        display: flex;
+        background: rgba(0, 0, 0, 0.35);
+        border-radius: 24px;
+        padding: 3px;
+      }
+      .mode-toggle-btn {
+        flex: 1;
+        padding: 8px 12px;
+        font-size: 13px;
+        text-align: center;
+        min-height: 38px;
+        border-radius: 20px;
+      }
+
+      /* Main container padding for thumb reach */
+      main.bench-container {
+        padding: 8px 10px 110px 10px; /* Generous bottom clearance for the sticky thumb bar */
+        gap: 12px;
+        margin: 6px auto;
+      }
+      .card {
+        padding: 14px 12px;
+        border-radius: 12px;
+      }
+      .card-title {
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+      .badge-shortcut {
+        display: none; /* Desktop keyboard shortcuts [1-9] / '/' are hidden on touch screens */
+      }
+
+      /* Hero Camera Button for Thumbs */
+      .scan-hud {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 10px;
+      }
+      .scan-info {
+        display: none; /* Streamline on phone to focus immediately on the thumb action button */
+      }
+      .btn-camera-scan {
+        width: 100%;
+        height: 52px;
+        font-size: 15px;
+        font-weight: 700;
+        justify-content: center;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0, 94, 184, 0.3);
+      }
+      .btn-camera-scan span:first-child {
+        font-size: 20px;
+      }
+      .btn-camera-scan:active {
+        transform: scale(0.98);
+      }
+
+      /* Input boxes: min 16px to prevent iOS Safari auto-zoom */
+      .search-input,
+      .text-box,
+      textarea.text-box,
+      select {
+        font-size: 16px !important;
+        height: 46px;
+        border-radius: 8px;
+      }
+      textarea.text-box {
+        height: 80px;
+      }
+      .search-input-wrap {
+        max-width: 100%;
+      }
+
+      /* Error Category Pills: 2-column thumb grid */
+      .pill-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .error-pill {
+        padding: 12px 10px;
+        min-height: 50px; /* Standard 48-50px touch target */
+        border-radius: 8px;
+        font-size: 12.5px;
+        line-height: 1.25;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        text-align: left;
+      }
+      .error-pill:active {
+        transform: scale(0.97);
+      }
+      .pill-key {
+        display: none; /* Hide hotkey numbers on mobile */
+      }
+      .error-pill.selected::after {
+        content: "✓";
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        font-size: 14px;
+        font-weight: 900;
+      }
+
+      /* Sibling chips & Factor chips: thumb-friendly touch sizes */
+      .sibling-chips-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 10px 0;
+      }
+      .sibling-chip {
+        padding: 10px 14px;
+        min-height: 44px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 22px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .sibling-chip:active {
+        transform: scale(0.96);
+      }
+      .factor-chips-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .factor-chip {
+        padding: 9px 13px;
+        min-height: 42px;
+        font-size: 12px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .factor-chip:active {
+        transform: scale(0.96);
+      }
+
+      /* Fixed Thumb Action Bar at bottom */
+      .submit-bar {
+        padding: 10px 14px max(14px, env(safe-area-inset-bottom)) 14px;
+        background: var(--bg-card);
+        border-top: 1px solid var(--border-color);
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.14);
+        z-index: 1100;
+      }
+      .submit-shortcuts-hint {
+        display: none; /* Hide keyboard shortcut hints */
+      }
+      .submit-actions {
+        width: 100%;
+        display: flex;
+        gap: 10px;
+      }
+      .btn-reset {
+        height: 52px;
+        padding: 0 18px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .btn-reset:active {
+        transform: scale(0.97);
+      }
+      .btn-submit {
+        flex: 1;
+        height: 52px;
+        font-size: 16px;
+        font-weight: 700;
+        justify-content: center;
+        border-radius: 10px;
+        box-shadow: 0 3px 12px rgba(0, 127, 59, 0.35);
+      }
+      .btn-submit:active {
+        transform: scale(0.98);
+      }
+
+      /* Camera modal fullscreen on mobile */
+      .camera-modal-backdrop {
+        padding: 0;
+      }
+      .camera-modal-card {
+        max-width: 100%;
+        height: 100%;
+        border-radius: 0;
+        border: none;
+      }
+      .camera-viewport-wrap {
+        flex: 1;
+        max-height: none;
+        aspect-ratio: auto;
+      }
+      .camera-reticle {
+        width: 250px;
+        height: 250px;
+      }
+
+      /* Scanner diagnostics drawer */
+      .scanner-status-bar {
+        font-size: 11px;
+      }
+      .scanner-debug-toggle {
+        display: inline-block;
+        padding: 4px 6px;
+      }
+    }
+
+    /* Small phones (<= 380px, e.g. iPhone SE / mini) */
+    @media (max-width: 380px) {
+      .pill-grid {
+        grid-template-columns: 1fr;
+      }
+      .app-title-wrap h1 {
+        font-size: 13px;
+      }
     }
   </style>
 </head>
@@ -1130,7 +1394,7 @@
 
         <button type="button" class="btn-camera-scan" id="btnOpenMobileScanner" title="Use Phone / Device Camera to Scan">
           <span>📷</span>
-          <span>Camera Scan</span>
+          <span>Scan Medicine Barcode</span>
         </button>
 
         <!-- Fallback Type-Ahead Search Box -->
@@ -1790,6 +2054,9 @@
     function setNearMissType(type) {
       state.nearMissType = type;
       localStorage.setItem('nearmiss_type', type);
+      if (navigator.vibrate) {
+        try { navigator.vibrate(20); } catch(e) {}
+      }
       if (type === 'Dispensing') {
         dom.btnModeDispensing.classList.add('active');
         dom.btnModeClinical.classList.remove('active');
@@ -1836,6 +2103,9 @@
         state.selectedCategories.delete(cat.id);
       } else {
         state.selectedCategories.add(cat.id);
+        if (navigator.vibrate) {
+          try { navigator.vibrate(25); } catch(e) {}
+        }
       }
       renderErrorCategories();
     }
@@ -1914,6 +2184,9 @@
         chip.textContent = sib.nm + (sib.cmm ? ' ★' : '');
         if (sib.cmm) chip.title = 'UHB CMM Stock Line';
         chip.addEventListener('click', () => {
+          if (navigator.vibrate) {
+            try { navigator.vibrate(20); } catch(e) {}
+          }
           selectIntendedDrug({
             id: sib.id,
             name: sib.nm,
