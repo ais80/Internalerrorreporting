@@ -1,0 +1,2813 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UHBFT Pharmacy - Near Miss Reporting & Learning</title>
+
+  <!-- Progressive Web App (PWA) Meta & Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Near Miss">
+  <meta name="theme-color" content="#005eb8">
+  <style>
+    :root {
+      --nhs-blue: #005eb8;
+      --nhs-dark-blue: #002f6c;
+      --nhs-bright-blue: #0072ce;
+      --nhs-light-blue: #41b6e6;
+      --nhs-green: #007f3b;
+      --nhs-light-green: #eaf6ec;
+      --nhs-red: #d5281b;
+      --nhs-light-red: #fde8e7;
+      --nhs-amber: #ed8b00;
+      --nhs-light-amber: #fef3e5;
+      --nhs-warm-yellow: #ffb81c;
+      --nhs-grey-1: #425563;
+      --nhs-grey-3: #aeb7bd;
+      --nhs-grey-5: #e8edee;
+      --nhs-white: #ffffff;
+      
+      --bg-page: #f0f4f5;
+      --bg-card: #ffffff;
+      --bg-subtle: #f8fafb;
+      --text-main: #212b32;
+      --text-muted: #4c6272;
+      --border-color: #d8dde0;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --pill-active-bg: #005eb8;
+      --pill-active-text: #ffffff;
+    }
+
+    body.dark-mode {
+      --bg-page: #12191f;
+      --bg-card: #1c2630;
+      --bg-subtle: #24313d;
+      --text-main: #e8edee;
+      --text-muted: #aeb7bd;
+      --border-color: #384857;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+      --pill-active-bg: #41b6e6;
+      --pill-active-text: #12191f;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      font-size: 14px;
+    }
+
+    /* Top Sticky Workstation Bar */
+    header.workstation-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--nhs-dark-blue);
+      color: var(--nhs-white);
+      padding: 8px 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nhs-logo {
+      background: #005eb8;
+      color: white;
+      font-weight: 800;
+      font-size: 16px;
+      padding: 3px 8px;
+      border-radius: 2px;
+      letter-spacing: -0.5px;
+      user-select: none;
+    }
+
+    .app-title-wrap h1 {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      line-height: 1.1;
+    }
+
+    .app-title-wrap p {
+      font-size: 11px;
+      color: var(--nhs-light-blue);
+    }
+
+    .bench-profiles {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sticky-pill {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .sticky-pill:hover { background: rgba(255, 255, 255, 0.22); }
+    .sticky-pill select {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+    .sticky-pill select option {
+      background: #1c2630;
+      color: #fff;
+    }
+
+    .mode-toggle-group {
+      display: flex;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 2px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .mode-toggle-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.75);
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mode-toggle-btn.active {
+      background: var(--nhs-bright-blue);
+      color: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    .status-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-icon-subtle {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+    .btn-icon-subtle:hover { background: rgba(255, 255, 255, 0.25); }
+
+    .offline-badge {
+      display: none;
+      background: var(--nhs-amber);
+      color: #000;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .offline-badge.visible { display: inline-flex; }
+
+    /* Main Container */
+    main.bench-container {
+      max-width: 1140px;
+      margin: 16px auto;
+      padding: 0 16px 80px 16px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title .badge-shortcut {
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--text-muted);
+      text-transform: none;
+    }
+
+    /* Scan Banner / HUD */
+    .scan-hud {
+      background: linear-gradient(135deg, rgba(0, 94, 184, 0.08) 0%, rgba(65, 182, 230, 0.08) 100%);
+      border: 2px dashed var(--nhs-blue);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transition: all 0.2s ease;
+    }
+    .scan-hud.scanning {
+      border-color: var(--nhs-green);
+      background: var(--nhs-light-green);
+      transform: scale(1.005);
+    }
+    .scan-hud.error-scan {
+      border-color: var(--nhs-red);
+      background: var(--nhs-light-red);
+    }
+
+    .scan-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .scan-icon {
+      font-size: 26px;
+      color: var(--nhs-blue);
+    }
+    .scan-text h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .scan-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+      max-width: 460px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 9px 36px 9px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      background: var(--bg-card);
+      color: var(--text-main);
+      outline: none;
+      transition: border 0.15s;
+    }
+    .search-input:focus {
+      border-color: var(--nhs-bright-blue);
+      box-shadow: 0 0 0 3px rgba(0, 114, 206, 0.2);
+    }
+    .search-clear-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 16px;
+      display: none;
+    }
+    .search-clear-btn.visible { display: block; }
+
+    /* Scanner Status Bar & Diagnostics */
+    .scanner-status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 10px;
+      width: 100%;
+    }
+    .scanner-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--nhs-green);
+      display: inline-block;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(0, 150, 57, 0.2);
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .scanner-dot.scanning {
+      background: var(--nhs-bright-blue);
+      box-shadow: 0 0 0 4px rgba(0, 114, 206, 0.35);
+      animation: pulseBlue 0.8s infinite alternate;
+    }
+    .scanner-dot.error {
+      background: var(--nhs-red);
+      box-shadow: 0 0 0 4px rgba(218, 41, 28, 0.3);
+    }
+    @keyframes pulseBlue {
+      from { transform: scale(1); }
+      to { transform: scale(1.3); }
+    }
+    .scanner-status-text {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .scanner-debug-toggle {
+      color: var(--nhs-blue);
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 11px;
+      user-select: none;
+    }
+    .scanner-debug-toggle:hover {
+      color: var(--nhs-dark-blue);
+    }
+    .scanner-debug-drawer {
+      background: rgba(0, 94, 184, 0.04);
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-top: 8px;
+      width: 100%;
+    }
+
+    /* Typeahead Dropdown */
+    .typeahead-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      max-height: 280px;
+      overflow-y: auto;
+      z-index: 500;
+      margin-top: 4px;
+      display: none;
+    }
+    .typeahead-dropdown.open { display: block; }
+    .typeahead-item {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .typeahead-item:last-child { border-bottom: none; }
+    .typeahead-item:hover, .typeahead-item.selected {
+      background: var(--bg-subtle);
+    }
+    .typeahead-item .primary-text {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .typeahead-item .secondary-text {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .badge-cmm-stock {
+      background: var(--nhs-light-green);
+      color: var(--nhs-green);
+      font-weight: 700;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid #c2e5ca;
+      white-space: nowrap;
+    }
+    .badge-nti {
+      background: var(--nhs-light-amber);
+      color: #a35b00;
+      font-weight: 700;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid #ffd399;
+      white-space: nowrap;
+    }
+
+    /* Product Resolved Display Card */
+    .product-resolved-card {
+      display: none;
+      margin-top: 14px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-left: 5px solid var(--nhs-blue);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+    .product-resolved-card.active { display: block; }
+    .product-resolved-card.nti-alert { border-left-color: var(--nhs-amber); }
+    .product-resolved-card.expired-alert { border-left-color: var(--nhs-red); }
+
+    .product-header-line {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .product-name-large {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.25;
+    }
+    .product-meta-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .meta-tag {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+
+    .pack-expiry-banner {
+      display: none;
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      align-items: center;
+      gap: 6px;
+    }
+    .pack-expiry-banner.expired {
+      display: flex;
+      background: var(--nhs-light-red);
+      color: var(--nhs-red);
+      border: 1px solid #f6c4c1;
+    }
+    .pack-expiry-banner.short-dated {
+      display: flex;
+      background: var(--nhs-light-amber);
+      color: #924e00;
+      border: 1px solid #fedba8;
+    }
+
+    /* Error Grid Pills */
+    .pill-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 8px;
+    }
+
+    .error-pill {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .error-pill:hover {
+      background: var(--bg-card);
+      border-color: var(--nhs-bright-blue);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .error-pill.selected {
+      background: var(--pill-active-bg);
+      color: var(--pill-active-text);
+      border-color: var(--pill-active-bg);
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0, 94, 184, 0.25);
+    }
+    .error-pill.pulse-highlight {
+      animation: pulseAlert 1.5s infinite;
+      border-color: var(--nhs-red);
+      background: var(--nhs-light-red);
+      color: var(--nhs-red);
+      font-weight: 700;
+    }
+    @keyframes pulseAlert {
+      0% { box-shadow: 0 0 0 0 rgba(213, 40, 27, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(213, 40, 27, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(213, 40, 27, 0); }
+    }
+
+    .error-pill .pill-text {
+      font-size: 13px;
+      line-height: 1.2;
+    }
+    .error-pill .pill-key {
+      font-size: 10px;
+      font-weight: 700;
+      opacity: 0.6;
+      background: rgba(0,0,0,0.06);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+    .error-pill.selected .pill-key {
+      background: rgba(255,255,255,0.25);
+      opacity: 0.9;
+    }
+
+    /* What Should It Have Been Drawer */
+    .intended-drawer {
+      display: none;
+      background: var(--bg-subtle);
+      border: 1px solid #b3d7ff;
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-top: 14px;
+    }
+    .intended-drawer.open { display: block; }
+
+    .intended-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--nhs-dark-blue);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sibling-chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .sibling-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .sibling-chip:hover {
+      border-color: var(--nhs-blue);
+      background: #edf5fc;
+    }
+    .sibling-chip.selected {
+      background: var(--nhs-blue);
+      color: #fff;
+      border-color: var(--nhs-blue);
+    }
+
+    /* Inline Qty Inputs */
+    .qty-inputs-wrap {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .qty-inputs-wrap.open { display: grid; }
+    .input-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .input-field-group label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .text-box {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+    }
+    .text-box:focus {
+      border-color: var(--nhs-bright-blue);
+    }
+
+    /* Contributing Factors */
+    .chips-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .factor-chip {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 5px 11px;
+      font-size: 12px;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .factor-chip:hover {
+      border-color: var(--nhs-bright-blue);
+    }
+    .factor-chip.selected {
+      background: #002f6c;
+      color: #fff;
+      border-color: #002f6c;
+      font-weight: 600;
+    }
+
+    /* Learning note & PID guard */
+    .learning-note-wrap {
+      margin-top: 10px;
+      position: relative;
+    }
+    .learning-textarea {
+      width: 100%;
+      min-height: 54px;
+      max-height: 100px;
+      padding: 8px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 13px;
+      resize: vertical;
+      outline: none;
+    }
+    .learning-textarea:focus { border-color: var(--nhs-bright-blue); }
+    .pid-warning {
+      display: none;
+      margin-top: 4px;
+      color: var(--nhs-red);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .pid-warning.active { display: block; }
+
+    /* Footer Submit Bar */
+    footer.submit-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border-color);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      z-index: 900;
+    }
+
+    .submit-shortcuts-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .submit-shortcuts-hint kbd {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    .submit-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .btn-reset:hover {
+      background: var(--bg-subtle);
+      color: var(--text-main);
+    }
+
+    .btn-submit {
+      background: var(--nhs-green);
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 127, 59, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s;
+    }
+    .btn-submit:hover {
+      background: #00662f;
+    }
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Toast Notification (Undo) */
+    .toast-container {
+      position: fixed;
+      bottom: 64px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      background: #1c2630;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      border-left: 4px solid var(--nhs-green);
+      animation: slideInToast 0.2s ease-out;
+    }
+    @keyframes slideInToast {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .toast .btn-undo {
+      background: var(--nhs-bright-blue);
+      color: #fff;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .toast .btn-undo:hover { background: #0056b3; }
+
+    /* Modals & Dialogs */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-dialog {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: var(--shadow-md);
+    }
+    .modal-dialog h2 { font-size: 16px; margin-bottom: 12px; color: var(--nhs-dark-blue); }
+    .modal-dialog p { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+
+    /* Camera Barcode Scanner */
+    .btn-camera-scan {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--nhs-blue);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+    .btn-camera-scan:hover {
+      background: var(--nhs-dark-blue);
+      transform: translateY(-1px);
+    }
+    .btn-camera-scan:active {
+      transform: translateY(0);
+    }
+    .btn-camera-scan.secondary {
+      background: rgba(0, 94, 184, 0.1);
+      color: var(--nhs-blue);
+      box-shadow: none;
+      border: 1px solid var(--nhs-blue);
+    }
+    .btn-camera-scan.secondary:hover {
+      background: rgba(0, 94, 184, 0.18);
+    }
+
+    /* Camera Modal Backdrop & Viewport */
+    .camera-modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(4px);
+      z-index: 5000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+    .camera-modal-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.55);
+      max-width: 480px;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-color);
+      animation: modalFadeIn 0.2s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .camera-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-surface);
+    }
+    .camera-modal-close {
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: var(--text-muted);
+      line-height: 1;
+      padding: 2px 8px;
+    }
+    .camera-modal-close:hover {
+      color: var(--nhs-red);
+    }
+    .camera-viewport-wrap {
+      position: relative;
+      background: #000;
+      aspect-ratio: 4 / 3;
+      max-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .camera-viewport-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .camera-reticle {
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border: 2px dashed rgba(255, 255, 255, 0.6);
+      border-radius: 12px;
+      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .camera-reticle.success {
+      border-color: #009639;
+      box-shadow: 0 0 0 4000px rgba(0, 150, 57, 0.4);
+    }
+    .camera-laser {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      right: 6px;
+      height: 2px;
+      background: #41b6e6;
+      box-shadow: 0 0 8px #41b6e6, 0 0 16px #41b6e6;
+      animation: laserSweep 2s ease-in-out infinite alternate;
+    }
+    @keyframes laserSweep {
+      0% { top: 6px; opacity: 0.9; }
+      50% { opacity: 1; }
+      100% { top: calc(100% - 8px); opacity: 0.9; }
+    }
+    .reticle-corner {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border: 3px solid #005eb8;
+    }
+    .reticle-corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-top-left-radius: 10px; }
+    .reticle-corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; border-top-right-radius: 10px; }
+    .reticle-corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; border-bottom-left-radius: 10px; }
+    .reticle-corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; border-bottom-right-radius: 10px; }
+    .camera-tip {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-size: 11px;
+      text-align: center;
+      padding: 6px 12px;
+      border-radius: 20px;
+      pointer-events: none;
+    }
+    .camera-modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 10px 14px;
+      border-top: 1px solid var(--border-color);
+      background: var(--bg-surface);
+    }
+    .btn-cam-ctrl {
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+      cursor: pointer;
+    }
+    .btn-cam-ctrl:hover {
+      background: var(--border-color);
+    }
+
+    @media (max-width: 768px) {
+      .pill-grid { grid-template-columns: 1fr; }
+      .search-input-wrap { max-width: 100%; }
+      .scan-hud { flex-direction: column; align-items: stretch; }
+      .btn-camera-scan { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Sticky Workstation / Session Header Bar -->
+  <header class="workstation-bar" id="topHeader">
+    <div class="brand-group">
+      <div class="nhs-logo">NHS</div>
+      <div class="app-title-wrap">
+        <h1>Near Miss Reporting & Learning</h1>
+        <p>UHBFT Pharmacy Dispensing & Clinical Safety</p>
+      </div>
+    </div>
+
+    <!-- Sticky Bench Profiles -->
+    <div class="bench-profiles">
+      <!-- Site selector -->
+      <div class="sticky-pill" title="Bench Hospital Site">
+        <span>🏥</span>
+        <select id="siteSelect">
+          <option value="Queen Elizabeth">Queen Elizabeth</option>
+          <option value="Heartlands">Heartlands</option>
+          <option value="Good Hope">Good Hope</option>
+          <option value="Solihull">Solihull</option>
+          <option value="Other">Other Site</option>
+        </select>
+      </div>
+
+      <!-- Satellite Unit Pill -->
+      <div class="sticky-pill" id="satellitePill" title="Satellite Unit status">
+        <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="satelliteToggle" style="cursor:pointer;">
+          <span>Satellite Unit</span>
+        </label>
+      </div>
+
+      <div class="sticky-pill" id="satelliteNamePill" style="display:none;" title="Satellite Name">
+        <select id="satelliteNameSelect">
+          <option value="GHH Satellite Unit">GHH Satellite Unit</option>
+          <option value="SH Satellite Unit">SH Satellite Unit</option>
+          <option value="Other Satellite">Other Satellite</option>
+        </select>
+      </div>
+
+      <!-- Near Miss Type Toggle -->
+      <div class="mode-toggle-group">
+        <button type="button" class="mode-toggle-btn active" id="btnModeDispensing">Dispensing</button>
+        <button type="button" class="mode-toggle-btn" id="btnModeClinical">Clinical</button>
+      </div>
+
+      <!-- Completed By Session Chip -->
+      <div class="sticky-pill" id="completedByPill" title="Checker Initials / Role">
+        <span>👤</span>
+        <input type="text" id="completedByInput" placeholder="Initials (opt)" maxlength="12" style="background:transparent; border:none; color:#fff; font-size:12px; font-weight:600; width:75px; outline:none;">
+      </div>
+
+      <!-- Auto Date / Time -->
+      <div class="sticky-pill" title="Incident Date & Time (auto-populated)">
+        <span>🕒</span>
+        <span id="liveDateDisplay">09/11/2026</span>
+        <select id="timeOfDaySelect" style="margin-left:4px;">
+          <option value="Before 9am">Before 9am</option>
+          <option value="9-10am">9-10am</option>
+          <option value="10-11am">10-11am</option>
+          <option value="11-12am">11-12am</option>
+          <option value="12-1pm">12-1pm</option>
+          <option value="1-2pm">1-2pm</option>
+          <option value="2-3pm">2-3pm</option>
+          <option value="3-4pm">3-4pm</option>
+          <option value="4-5pm">4-5pm</option>
+          <option value="After 5pm">After 5pm</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Status & Settings -->
+    <div class="status-actions">
+      <div class="offline-badge" id="offlineQueueBadge" title="Offline Queue - click to export">Offline: 0</div>
+      <button class="btn-icon-subtle" id="themeToggleBtn" title="Toggle Light / Dark mode">🌓</button>
+    </div>
+  </header>
+
+  <!-- Main Checking Bench Surface -->
+  <main class="bench-container">
+
+    <!-- Section 1: Error Drug Scan / Search HUD -->
+    <section class="card" id="drugInputCard">
+      <div class="card-title">
+        <span>1. Implicated / Error Medication</span>
+        <span class="badge-shortcut">Scan Barcode Anywhere &bull; Or Press '/' to Search</span>
+      </div>
+
+      <div class="scan-hud" id="scanHud">
+        <div class="scan-info">
+          <div class="scan-icon" id="scanIcon">📷</div>
+          <div class="scan-text">
+            <h3 id="scanHudTitle">Scan 2D DataMatrix or 1D EAN Barcode</h3>
+            <p id="scanHudSubtitle">Auto-resolves GTIN to dm+d, CMM stock, expiry date &amp; batch</p>
+          </div>
+        </div>
+
+        <button type="button" class="btn-camera-scan" id="btnOpenMobileScanner" title="Use Phone / Device Camera to Scan">
+          <span>📷</span>
+          <span>Camera Scan</span>
+        </button>
+
+        <!-- Fallback Type-Ahead Search Box -->
+        <div class="search-input-wrap">
+          <input type="text" class="search-input" id="drugSearchInput" placeholder="Or type drug name / CMM code (e.g. Verapamil, D10002)..." autocomplete="off" spellcheck="false">
+          <button type="button" class="search-clear-btn" id="searchClearBtn">&times;</button>
+          <div class="typeahead-dropdown" id="typeaheadDropdown"></div>
+        </div>
+      </div>
+
+      <!-- Live Scanner Status & Diagnostics Bar -->
+      <div class="scanner-status-bar" id="scannerStatusBar">
+        <span class="scanner-dot" id="scannerDot"></span>
+        <span class="scanner-status-text" id="scannerStatusText">Scanner Active &bull; Ready for 2D DataMatrix or 1D EAN Barcode</span>
+        <span class="scanner-debug-toggle" id="scannerDebugToggle" title="Click to test scanner connection or enter barcode manually">&#9889; Barcode Diagnostics</span>
+      </div>
+      <div class="scanner-debug-drawer" id="scannerDebugDrawer" style="display:none;">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:2px;">
+          <input type="text" id="manualBarcodeInput" class="search-input" style="flex:1; min-width:240px; font-family:monospace; font-size:12px; height:32px;" placeholder="Test scanner output or paste test barcode (e.g. 5012617009784)...">
+          <button type="button" id="btnTestBarcode" class="btn-primary" style="padding:6px 14px; font-size:12px; height:32px;">Test Barcode</button>
+        </div>
+        <div id="scannerLiveLog" style="font-family:monospace; font-size:11px; margin-top:6px; color:var(--text-muted); line-height:1.4;">Last scan payload: (no scan received yet &mdash; point scanner and scan pack)</div>
+      </div>
+
+      <!-- Product Resolved Detail Card -->
+      <div class="product-resolved-card" id="resolvedCard">
+        <div class="product-header-line">
+          <div>
+            <div class="product-name-large" id="resolvedName">&mdash;</div>
+            <div class="product-meta-tags" id="resolvedMetaTags"></div>
+          </div>
+          <button type="button" class="btn-reset" id="btnChangeDrug" style="padding:4px 8px; font-size:11px;">Change</button>
+        </div>
+
+        <div class="pack-expiry-banner" id="expiryBanner">
+          <span id="expiryBannerIcon">⚠️</span>
+          <span id="expiryBannerText">Pack Expired</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Error Category Grid -->
+    <section class="card">
+      <div class="card-title">
+        <span id="errorCategoryHeader">2. Error Category</span>
+        <span class="badge-shortcut">Hotkeys [1-9]</span>
+      </div>
+      <div class="pill-grid" id="errorPillGrid">
+        <!-- Injected via JavaScript based on Dispensing vs Clinical mode -->
+      </div>
+
+      <!-- Dynamic "What Should It Have Been?" Drawer -->
+      <div class="intended-drawer" id="intendedDrawer">
+        <div class="intended-title">
+          <span>🎯 What should the correct medication have been?</span>
+          <span class="badge-shortcut" style="font-size:10px;">Select sibling chip or scan correct pack</span>
+        </div>
+
+        <!-- 1-Tap Sibling Chips (Strengths, Formulations, NTI Brands) -->
+        <div class="sibling-chips-wrap" id="siblingChipsWrap"></div>
+
+        <!-- 2nd Drug Search Box (if not in sibling list) -->
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+          <button type="button" class="btn-camera-scan secondary" id="btnOpenIntendedMobileScanner" title="Use Camera to Scan Correct Pack">
+            <span>📷</span>
+            <span>Scan Correct Pack with Camera</span>
+          </button>
+          <div class="search-input-wrap" style="flex:1; max-width:100%; min-width:220px;">
+            <input type="text" class="search-input" id="intendedSearchInput" placeholder="Or scan/search intended drug name..." autocomplete="off">
+            <div class="typeahead-dropdown" id="intendedTypeaheadDropdown"></div>
+          </div>
+        </div>
+
+        <div id="intendedSelectedCard" style="display:none; margin-top:8px; padding:8px 12px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:4px; font-weight:600;">
+          <span style="color:var(--nhs-green);">✓ Intended: </span>
+          <span id="intendedSelectedName"></span>
+          <button type="button" id="btnClearIntended" style="float:right; background:none; border:none; cursor:pointer; color:var(--text-muted);">&times;</button>
+        </div>
+      </div>
+
+      <!-- Optional Qty Inputs (Triggered by 'Wrong Quantity') -->
+      <div class="qty-inputs-wrap" id="qtyInputsWrap">
+        <div class="input-field-group">
+          <label for="qtyDispensedInput">Quantity Dispensed</label>
+          <input type="text" class="text-box" id="qtyDispensedInput" placeholder="e.g. 56">
+        </div>
+        <div class="input-field-group">
+          <label for="qtyPrescribedInput">Quantity Prescribed</label>
+          <input type="text" class="text-box" id="qtyPrescribedInput" placeholder="e.g. 28">
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Contributing Factors & Learning Notes (Optional) -->
+    <section class="card">
+      <div class="card-title">
+        <span>3. Contributing Factors &amp; Learning Note (Optional)</span>
+        <span class="badge-shortcut">Zero Clicks to Skip</span>
+      </div>
+
+      <div class="chips-group" id="factorChipsGroup">
+        <div class="factor-chip" data-val="Similar Packaging / Look-Alike">Similar Packaging / Look-Alike</div>
+        <div class="factor-chip" data-val="Sound-Alike Name">Sound-Alike Name</div>
+        <div class="factor-chip" data-val="Robot Pick Error">Robot Pick Error</div>
+        <div class="factor-chip" data-val="Split Pack / Owings">Split Pack / Owings</div>
+        <div class="factor-chip" data-val="High Workload / Interruption">High Workload / Interruption</div>
+        <div class="factor-chip" data-val="Handwritten / Unclear Rx">Handwritten / Unclear Rx</div>
+        <div class="factor-chip" data-val="PICS Selection Error">PICS Selection Error</div>
+      </div>
+
+      <div class="learning-note-wrap">
+        <textarea class="learning-textarea" id="learningNoteInput" maxlength="200" placeholder="Optional learning note (e.g. manufacturer changed blister foil color)... Do NOT enter Patient Names or Hospital/NHS numbers."></textarea>
+        <div class="pid-warning" id="pidWarning">⚠️ Patient Identifier Detected! Hospital or NHS numbers are strictly blocked from near-miss reports.</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Sticky Bottom Submit Footer Bar -->
+  <footer class="submit-bar">
+    <div class="submit-shortcuts-hint">
+      Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to Submit &bull; <kbd>Esc</kbd> to Reset
+    </div>
+
+    <div class="submit-actions">
+      <button type="button" class="btn-reset" id="btnResetForm">Reset</button>
+      <button type="button" class="btn-submit" id="btnSubmit">
+        <span>Submit Near Miss</span>
+        <span>&rarr;</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- Mobile Camera Barcode Scanner Modal -->
+  <div class="camera-modal-backdrop" id="cameraModalBackdrop" style="display:none;">
+    <div class="camera-modal-card">
+      <div class="camera-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">📷</span>
+          <span style="font-weight:700; font-size:15px;" id="cameraModalTitle">Scan Medicine Pack</span>
+        </div>
+        <button type="button" class="camera-modal-close" id="btnCloseCameraModal" title="Close Camera">&times;</button>
+      </div>
+
+      <div class="camera-viewport-wrap">
+        <video id="cameraVideo" playsinline autoplay muted></video>
+        <div class="camera-reticle" id="cameraReticle">
+          <div class="camera-laser"></div>
+          <div class="reticle-corner tl"></div>
+          <div class="reticle-corner tr"></div>
+          <div class="reticle-corner bl"></div>
+          <div class="reticle-corner br"></div>
+        </div>
+        <div class="camera-tip" id="cameraTip">Center 2D DataMatrix or 1D barcode in the frame</div>
+      </div>
+
+      <div class="camera-modal-footer">
+        <button type="button" class="btn-cam-ctrl" id="btnToggleTorch" style="display:none;" title="Toggle Flashlight">💡 Torch</button>
+        <button type="button" class="btn-cam-ctrl" id="btnFlipCamera" title="Switch Camera">🔄 Switch Camera</button>
+        <button type="button" class="btn-cam-ctrl" id="btnCancelCamera">Cancel</button>
+      </div>
+      <div id="cameraStatusNote" style="font-size:11px; text-align:center; color:var(--text-muted); padding:4px 0 8px 0;">Supports GS1 DataMatrix (Batch &amp; Expiry) and 1D EAN Barcodes</div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container (5s Undo) -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Load Configuration & Compiled Drug Database -->
+  <script src="nearmiss_config.js"></script>
+  <script src="nearmiss_drug_index.js"></script>
+  <script src="zxing.min.js"></script>
+
+  <!-- Near Miss Logger Logic -->
+  <script>
+  (function() {
+    'use strict';
+
+    // --- Parse URL Parameters (Site & Mode Pre-Configuration for QR Codes / Mobile Links) ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramSite = urlParams.get('site');
+    if (paramSite) {
+      const p = paramSite.toLowerCase().trim();
+      let matchedSite = '';
+      if (p.includes('good') || p === 'ghh') matchedSite = 'Good Hope';
+      else if (p.includes('heartland') || p === 'bhh') matchedSite = 'Heartlands';
+      else if (p.includes('solihull') || p === 'sh') matchedSite = 'Solihull';
+      else if (p.includes('queen') || p.includes('elizabeth') || p === 'qehb' || p === 'qe') matchedSite = 'Queen Elizabeth';
+      else if (p === 'other') matchedSite = 'Other';
+      if (matchedSite) {
+        localStorage.setItem('nearmiss_site', matchedSite);
+      }
+    }
+    const paramType = urlParams.get('type');
+    if (paramType) {
+      const t = paramType.toLowerCase().trim();
+      if (t === 'clinical' || t === 'clin') localStorage.setItem('nearmiss_type', 'Clinical');
+      else if (t === 'dispensing' || t === 'disp') localStorage.setItem('nearmiss_type', 'Dispensing');
+    }
+    const paramSat = urlParams.get('satellite');
+    if (paramSat !== null) {
+      const isSat = (paramSat === '1' || paramSat.toLowerCase() === 'true' || paramSat.toLowerCase() === 'yes');
+      localStorage.setItem('nearmiss_satellite', isSat ? 'true' : 'false');
+    }
+
+    // --- State Model ---
+    const state = {
+      site: localStorage.getItem('nearmiss_site') || 'Queen Elizabeth',
+      siteOther: localStorage.getItem('nearmiss_site_other') || '',
+      nearMissType: localStorage.getItem('nearmiss_type') || 'Dispensing',
+      isSatelliteUnit: localStorage.getItem('nearmiss_satellite') === 'true',
+      satelliteUnitName: localStorage.getItem('nearmiss_satellite_name') || 'GHH Satellite Unit',
+      completedBy: localStorage.getItem('nearmiss_completed_by') || '',
+      completedOn: '',
+      timeOfDay: '',
+      
+      // Drug Selection
+      errorDrug: null, // Scanned/selected drug object
+      intendedDrug: null, // Sibling/correct drug object
+      
+      // Error categories
+      selectedCategories: new Set(),
+      qtyDispensed: '',
+      qtyPrescribed: '',
+      
+      // Factors & Notes
+      contributingFactors: new Set(),
+      learningNote: '',
+      
+      // Storage & Telemetry
+      lastSubmittedEventId: null,
+      undoTimer: null
+    };
+
+    // --- Error Category Definitions (Section 4 of Plan) ---
+    const CATEGORIES_DISPENSING = [
+      { id: 'Wrong Medication (Drug)', name: 'Wrong Medication (Drug)', key: '1', triggersIntended: true },
+      { id: 'Wrong Strength', name: 'Wrong Strength', key: '2', triggersIntended: true, siblingType: 'strength' },
+      { id: 'Wrong Form', name: 'Wrong Form', key: '3', triggersIntended: true, siblingType: 'form' },
+      { id: 'Wrong Brand (NTI)', name: 'Wrong Brand (NTI)', key: '4', triggersIntended: true, siblingType: 'brand' },
+      { id: 'Wrong Quantity', name: 'Wrong Quantity', key: '5', triggersQty: true },
+      { id: 'Out of Date', name: 'Out of Date', key: '6' },
+      { id: 'Wrong Dose', name: 'Wrong Dose', key: '7' },
+      { id: 'Wrong Frequency', name: 'Wrong Frequency', key: '8' },
+      { id: 'Wrong Duration', name: 'Wrong Duration', key: '9' },
+      { id: 'Wrong Labelling Directions (Other)', name: 'Wrong Labelling Directions (Other)' },
+      { id: 'Wrong Patient Details', name: 'Wrong Patient Details', isPidRisk: true },
+      { id: 'Wrong Location / Ward', name: 'Wrong Location / Ward' }
+    ];
+
+    const CATEGORIES_CLINICAL = [
+      { id: 'Dose Error (Renal / Hepatic / Weight / Age)', name: 'Dose Error (Renal/Hepatic/Weight)', key: '1' },
+      { id: 'Wrong Dose / Strength / Frequency Prescribed', name: 'Wrong Dose/Strength Prescribed', key: '2', triggersIntended: true, siblingType: 'strength' },
+      { id: 'Drug-Drug Interaction', name: 'Drug-Drug Interaction', key: '3', triggersIntended: true },
+      { id: 'Allergy / Cross-Sensitivity', name: 'Allergy / Cross-Sensitivity', key: '4' },
+      { id: 'Omission of Critical / Regular Medication', name: 'Omission of Critical Medication', key: '5' },
+      { id: 'Therapeutic Duplication', name: 'Therapeutic Duplication', key: '6' },
+      { id: 'Contraindication', name: 'Contraindication', key: '7' },
+      { id: 'Wrong Formulation / Route Prescribed', name: 'Wrong Formulation / Route', key: '8', triggersIntended: true, siblingType: 'form' },
+      { id: 'High-Risk / VTE / Anticoagulant / Insulin Error', name: 'High-Risk / Anticoagulant / Insulin', key: '9' },
+      { id: 'TDM / Monitoring / Other Clinical', name: 'TDM / Monitoring / Other Clinical' }
+    ];
+
+    // --- Audio Feedback (Web Audio API Synthesizer - 0 external files) ---
+    const audioCtx = (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined')
+      ? new (window.AudioContext || window.webkitAudioContext)()
+      : null;
+
+    function playBeep(type) {
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      const now = audioCtx.currentTime;
+      if (type === 'scan-ok') {
+        osc.frequency.setValueAtTime(1760, now); // A6
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      } else if (type === 'scan-alert') {
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.setValueAtTime(440, now + 0.1);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        osc.start(now);
+        osc.stop(now + 0.22);
+      } else if (type === 'submit-success') {
+        osc.frequency.setValueAtTime(587.33, now); // D5
+        osc.frequency.setValueAtTime(880, now + 0.08); // A5
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      }
+    }
+
+    // --- Date and Time Bucket Helpers ---
+    function getTodayFormatted() {
+      const d = new Date();
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+
+    function calculateTimeBucket() {
+      const hour = new Date().getHours();
+      if (hour < 9) return 'Before 9am';
+      if (hour === 9) return '9-10am';
+      if (hour === 10) return '10-11am';
+      if (hour === 11) return '11-12am';
+      if (hour === 12) return '12-1pm';
+      if (hour === 13) return '1-2pm';
+      if (hour === 14) return '2-3pm';
+      if (hour === 15) return '3-4pm';
+      if (hour === 16) return '4-5pm';
+      return 'After 5pm';
+    }
+
+    // --- Global GS1 & EAN-13 Barcode Keyboard Wedge Listener ---
+    class Gs1ScannerEngine {
+      constructor(onBarcodeScanned, onLiveInputUpdate) {
+        this.onBarcodeScanned = onBarcodeScanned;
+        this.onLiveInputUpdate = onLiveInputUpdate || (() => {});
+        this.buffer = '';
+        this.lastCharTime = 0;
+        this.maxIntervalMs = 250; // Increased to 250ms for slow/budget handheld scanners
+        this.minBarcodeLength = 8;
+        this.flushTimer = null;
+        
+        window.addEventListener('keydown', (e) => this.handleKeyDown(e), true);
+        window.addEventListener('paste', (e) => this.handlePaste(e), true);
+      }
+
+      handlePaste(e) {
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.id === 'learningNoteInput' || activeEl.id === 'completedByInput')) return;
+        const pasted = (e.clipboardData || window.clipboardData).getData('text');
+        if (pasted && this.isPotentialBarcode(pasted)) {
+          e.preventDefault();
+          this.processScannedPayload(pasted.trim());
+        }
+      }
+
+      isPotentialBarcode(str) {
+        if (!str) return false;
+        const s = str.trim().replace(/^\][a-zA-Z0-9]{2,3}/, '');
+        if (/^\d{8,14}$/.test(s)) return true;
+        if ((s.startsWith('01') || s.startsWith('(01)')) && s.length >= 16) return true;
+        if (/\d{13,14}/.test(s)) return true;
+        return false;
+      }
+
+      handleKeyDown(e) {
+        const activeEl = document.activeElement;
+        const isUserWritingProse = (activeEl && (activeEl.id === 'learningNoteInput' || activeEl.id === 'completedByInput'));
+        
+        const now = Date.now();
+        const interval = now - this.lastCharTime;
+        this.lastCharTime = now;
+
+        // If interval is too long, reset wedge buffer unless it's the very first char
+        if (interval > this.maxIntervalMs && this.buffer.length > 0) {
+          this.buffer = '';
+        }
+
+        // Enter or Tab terminator from scanner
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          if (this.flushTimer) {
+            clearTimeout(this.flushTimer);
+            this.flushTimer = null;
+          }
+
+          if (this.buffer.length >= this.minBarcodeLength) {
+            e.preventDefault();
+            e.stopPropagation();
+            const raw = this.buffer;
+            this.buffer = '';
+            this.onLiveInputUpdate('');
+            this.processScannedPayload(raw);
+            return;
+          }
+          this.buffer = '';
+          this.onLiveInputUpdate('');
+          return;
+        }
+
+        if (e.key.length === 1) {
+          // If human typing slowly into notes, don't accumulate
+          if (isUserWritingProse && interval > this.maxIntervalMs) {
+            this.buffer = '';
+            return;
+          }
+
+          this.buffer += e.key;
+          this.onLiveInputUpdate(this.buffer, interval);
+
+          // Auto-flush debounce timer (for budget scanners that do NOT send an Enter key)
+          if (this.flushTimer) clearTimeout(this.flushTimer);
+          this.flushTimer = setTimeout(() => {
+            if (this.buffer.length >= this.minBarcodeLength && this.isPotentialBarcode(this.buffer)) {
+              const raw = this.buffer;
+              this.buffer = '';
+              this.onLiveInputUpdate('');
+              this.processScannedPayload(raw);
+            }
+          }, 220);
+        }
+      }
+
+      processScannedPayload(raw) {
+        if (!raw) return;
+        // Strip AIM symbology prefixes (]d2, ]Q3, ]C1, ]e0, etc.)
+        let clean = raw.replace(/^\][a-zA-Z0-9]{2,3}/, '').trim();
+
+        // Normalize human-readable parentheses around AIs: (01)... -> 01...
+        clean = clean.replace(/\((\d{2})\)/g, '$1');
+
+        let gtin14 = '';
+        let expiryDate = '';
+        let batchNumber = '';
+        let isExpired = false;
+        let isShortDated = false;
+
+        // Check format: Pure numeric (1D EAN/UPC) vs 2D GS1 DataMatrix
+        if (/^\d{8,14}$/.test(clean)) {
+          // Standard 1D EAN-8 / UPC-12 / EAN-13 / GTIN-14
+          gtin14 = clean.padStart(14, '0');
+        } else if (clean.startsWith('01') && clean.length >= 16) {
+          // 2D GS1 DataMatrix string starting with AI (01)
+          gtin14 = clean.substring(2, 16);
+          let remainder = clean.substring(16);
+
+          while (remainder.length > 0) {
+            // Strip leading group separator (ASCII 29) or space
+            if (remainder.charCodeAt(0) === 29 || remainder.charCodeAt(0) === 32) {
+              remainder = remainder.substring(1);
+              continue;
+            }
+
+            if (remainder.startsWith('17') && remainder.length >= 8) {
+              // AI 17: Expiry Date (YYMMDD)
+              const yymmdd = remainder.substring(2, 8);
+              remainder = remainder.substring(8);
+              expiryDate = this.parseGs1Date(yymmdd);
+            } else if (remainder.startsWith('11') && remainder.length >= 8) {
+              // AI 11: Production Date (skip)
+              remainder = remainder.substring(8);
+            } else if (remainder.startsWith('10')) {
+              // AI 10: Batch / Lot (variable up to 20 chars)
+              remainder = remainder.substring(2);
+              const gsIdx = remainder.search(/[\x1D\s]/);
+              if (gsIdx !== -1) {
+                batchNumber = remainder.substring(0, gsIdx);
+                remainder = remainder.substring(gsIdx + 1);
+              } else {
+                batchNumber = remainder.substring(0, Math.min(20, remainder.length));
+                remainder = remainder.substring(batchNumber.length);
+              }
+            } else if (remainder.startsWith('21')) {
+              // AI 21: Serial Number (variable)
+              remainder = remainder.substring(2);
+              const gsIdx = remainder.search(/[\x1D\s]/);
+              if (gsIdx !== -1) {
+                remainder = remainder.substring(gsIdx + 1);
+              } else {
+                remainder = '';
+              }
+            } else {
+              remainder = remainder.substring(1);
+            }
+          }
+        } else {
+          // Fallback check if 13 or 14 contiguous digits exist within payload
+          const match14 = clean.match(/\d{13,14}/);
+          if (match14) {
+            gtin14 = match14[0].padStart(14, '0');
+          } else {
+            const match8 = clean.match(/\d{8,12}/);
+            if (match8) {
+              gtin14 = match8[0].padStart(14, '0');
+            }
+          }
+        }
+
+        if (expiryDate) {
+          const todayIso = new Date().toISOString().substring(0, 10);
+          if (expiryDate < todayIso) {
+            isExpired = true;
+          } else {
+            // Check short-dated (<= 28 days)
+            const dExpiry = new Date(expiryDate);
+            const dToday = new Date();
+            const diffDays = (dExpiry - dToday) / (1000 * 60 * 60 * 24);
+            if (diffDays <= 28) {
+              isShortDated = true;
+            }
+          }
+        }
+
+        this.onBarcodeScanned({
+          raw,
+          clean,
+          gtin14,
+          expiryDate,
+          batchNumber,
+          isExpired,
+          isShortDated
+        });
+      }
+
+      parseGs1Date(yymmdd) {
+        if (!/^\d{6}$/.test(yymmdd)) return '';
+        const yy = parseInt(yymmdd.substring(0, 2), 10);
+        const mm = parseInt(yymmdd.substring(2, 4), 10);
+        let dd = parseInt(yymmdd.substring(4, 6), 10);
+        const year = 2000 + yy;
+
+        // GS1 Rule: If DD == 00, resolves to the last day of month MM
+        if (dd === 0) {
+          const lastDayOfMonth = new Date(year, mm, 0).getDate();
+          dd = lastDayOfMonth;
+        }
+        return `${year}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+      }
+    }
+
+    // --- DOM Elements ---
+    const dom = {
+      siteSelect: document.getElementById('siteSelect'),
+      satelliteToggle: document.getElementById('satelliteToggle'),
+      satelliteNamePill: document.getElementById('satelliteNamePill'),
+      satelliteNameSelect: document.getElementById('satelliteNameSelect'),
+      btnModeDispensing: document.getElementById('btnModeDispensing'),
+      btnModeClinical: document.getElementById('btnModeClinical'),
+      completedByInput: document.getElementById('completedByInput'),
+      liveDateDisplay: document.getElementById('liveDateDisplay'),
+      timeOfDaySelect: document.getElementById('timeOfDaySelect'),
+      offlineQueueBadge: document.getElementById('offlineQueueBadge'),
+      themeToggleBtn: document.getElementById('themeToggleBtn'),
+      
+      scanHud: document.getElementById('scanHud'),
+      scanHudTitle: document.getElementById('scanHudTitle'),
+      scanHudSubtitle: document.getElementById('scanHudSubtitle'),
+      btnOpenMobileScanner: document.getElementById('btnOpenMobileScanner'),
+      scannerStatusBar: document.getElementById('scannerStatusBar'),
+      scannerDot: document.getElementById('scannerDot'),
+      scannerStatusText: document.getElementById('scannerStatusText'),
+      scannerDebugToggle: document.getElementById('scannerDebugToggle'),
+      scannerDebugDrawer: document.getElementById('scannerDebugDrawer'),
+      manualBarcodeInput: document.getElementById('manualBarcodeInput'),
+      btnTestBarcode: document.getElementById('btnTestBarcode'),
+      scannerLiveLog: document.getElementById('scannerLiveLog'),
+      drugSearchInput: document.getElementById('drugSearchInput'),
+      searchClearBtn: document.getElementById('searchClearBtn'),
+      typeaheadDropdown: document.getElementById('typeaheadDropdown'),
+      
+      resolvedCard: document.getElementById('resolvedCard'),
+      resolvedName: document.getElementById('resolvedName'),
+      resolvedMetaTags: document.getElementById('resolvedMetaTags'),
+      expiryBanner: document.getElementById('expiryBanner'),
+      expiryBannerText: document.getElementById('expiryBannerText'),
+      btnChangeDrug: document.getElementById('btnChangeDrug'),
+      
+      errorCategoryHeader: document.getElementById('errorCategoryHeader'),
+      errorPillGrid: document.getElementById('errorPillGrid'),
+      intendedDrawer: document.getElementById('intendedDrawer'),
+      btnOpenIntendedMobileScanner: document.getElementById('btnOpenIntendedMobileScanner'),
+      siblingChipsWrap: document.getElementById('siblingChipsWrap'),
+      intendedSearchInput: document.getElementById('intendedSearchInput'),
+      intendedTypeaheadDropdown: document.getElementById('intendedTypeaheadDropdown'),
+      intendedSelectedCard: document.getElementById('intendedSelectedCard'),
+      intendedSelectedName: document.getElementById('intendedSelectedName'),
+      btnClearIntended: document.getElementById('btnClearIntended'),
+      
+      qtyInputsWrap: document.getElementById('qtyInputsWrap'),
+      qtyDispensedInput: document.getElementById('qtyDispensedInput'),
+      qtyPrescribedInput: document.getElementById('qtyPrescribedInput'),
+      
+      factorChipsGroup: document.getElementById('factorChipsGroup'),
+      learningNoteInput: document.getElementById('learningNoteInput'),
+      pidWarning: document.getElementById('pidWarning'),
+      
+      btnResetForm: document.getElementById('btnResetForm'),
+      btnSubmit: document.getElementById('btnSubmit'),
+      toastContainer: document.getElementById('toastContainer')
+    };
+
+    // --- Initialise Header & Workstation Defaults ---
+    function initWorkstation() {
+      dom.siteSelect.value = state.site;
+      dom.satelliteToggle.checked = state.isSatelliteUnit;
+      dom.satelliteNamePill.style.display = state.isSatelliteUnit ? 'flex' : 'none';
+      dom.satelliteNameSelect.value = state.satelliteUnitName;
+      dom.completedByInput.value = state.completedBy;
+
+      state.completedOn = getTodayFormatted();
+      dom.liveDateDisplay.textContent = state.completedOn;
+      state.timeOfDay = calculateTimeBucket();
+      dom.timeOfDaySelect.value = state.timeOfDay;
+
+      setNearMissType(state.nearMissType);
+      updateOfflineBadge();
+    }
+
+    function setNearMissType(type) {
+      state.nearMissType = type;
+      localStorage.setItem('nearmiss_type', type);
+      if (type === 'Dispensing') {
+        dom.btnModeDispensing.classList.add('active');
+        dom.btnModeClinical.classList.remove('active');
+        dom.errorCategoryHeader.textContent = '2. Dispensing Error Category';
+      } else {
+        dom.btnModeClinical.classList.add('active');
+        dom.btnModeDispensing.classList.remove('active');
+        dom.errorCategoryHeader.textContent = '2. Clinical Error Category';
+      }
+      renderErrorCategories();
+    }
+
+    // --- Render Error Category Pills ---
+    function renderErrorCategories() {
+      const list = (state.nearMissType === 'Dispensing') ? CATEGORIES_DISPENSING : CATEGORIES_CLINICAL;
+      dom.errorPillGrid.innerHTML = '';
+
+      list.forEach((cat) => {
+        const pill = document.createElement('div');
+        pill.className = 'error-pill' + (state.selectedCategories.has(cat.id) ? ' selected' : '');
+        pill.dataset.catId = cat.id;
+
+        const leftSpan = document.createElement('span');
+        leftSpan.className = 'pill-text';
+        leftSpan.textContent = cat.name;
+        pill.appendChild(leftSpan);
+
+        if (cat.key) {
+          const keySpan = document.createElement('span');
+          keySpan.className = 'pill-key';
+          keySpan.textContent = cat.key;
+          pill.appendChild(keySpan);
+        }
+
+        pill.addEventListener('click', () => toggleErrorCategory(cat));
+        dom.errorPillGrid.appendChild(pill);
+      });
+
+      evaluateConditionals();
+    }
+
+    function toggleErrorCategory(cat) {
+      if (state.selectedCategories.has(cat.id)) {
+        state.selectedCategories.delete(cat.id);
+      } else {
+        state.selectedCategories.add(cat.id);
+      }
+      renderErrorCategories();
+    }
+
+    function evaluateConditionals() {
+      // Check if any selected category triggers intended product
+      const activeList = (state.nearMissType === 'Dispensing') ? CATEGORIES_DISPENSING : CATEGORIES_CLINICAL;
+      let needsIntended = false;
+      let siblingMode = 'strength';
+      let needsQty = false;
+
+      state.selectedCategories.forEach((catId) => {
+        const found = activeList.find(c => c.id === catId);
+        if (found) {
+          if (found.triggersIntended) {
+            needsIntended = true;
+            if (found.siblingType) siblingMode = found.siblingType;
+          }
+          if (found.triggersQty) needsQty = true;
+        }
+      });
+
+      if (needsIntended) {
+        dom.intendedDrawer.classList.add('open');
+        renderSiblingChips(siblingMode);
+      } else {
+        dom.intendedDrawer.classList.remove('open');
+      }
+
+      if (needsQty) {
+        dom.qtyInputsWrap.classList.add('open');
+      } else {
+        dom.qtyInputsWrap.classList.remove('open');
+      }
+    }
+
+    // --- Sibling Intelligence (O(1) VTM/VMP Lookups) ---
+    function renderSiblingChips(mode) {
+      dom.siblingChipsWrap.innerHTML = '';
+      if (!window.NEARMISS_DRUG_DB || !state.errorDrug) {
+        return;
+      }
+
+      const vtmId = state.errorDrug.vtmId;
+      if (!vtmId || !window.NEARMISS_DRUG_DB.vtmSiblings[vtmId]) {
+        return;
+      }
+
+      const siblingIndices = window.NEARMISS_DRUG_DB.vtmSiblings[vtmId];
+      const siblings = siblingIndices.map(idx => window.NEARMISS_DRUG_DB.getConcept(idx)).filter(Boolean);
+
+      // Prioritise UHB CMM stock lines first, then national lines
+      siblings.sort((a, b) => (b.cmm ? 1 : 0) - (a.cmm ? 1 : 0));
+
+      const currentVmpId = state.errorDrug.vmpId;
+      const currentAmpId = state.errorDrug.ampId;
+
+      let filtered = [];
+      if (mode === 'strength') {
+        // Different strength, same or similar formulation
+        filtered = siblings.filter(s => s.vp !== currentVmpId || (s.st && s.st !== state.errorDrug.strength));
+      } else if (mode === 'form') {
+        // Different formulation
+        filtered = siblings.filter(s => s.fm && s.fm !== state.errorDrug.form);
+      } else if (mode === 'brand') {
+        // Different AMP brand under same VMP or VTM
+        filtered = siblings.filter(s => s.ap && s.ap !== currentAmpId);
+      } else {
+        filtered = siblings.filter(s => s.id !== state.errorDrug.id);
+      }
+
+      // Limit chips to top 12 most relevant
+      filtered.slice(0, 12).forEach((sib) => {
+        const chip = document.createElement('div');
+        chip.className = 'sibling-chip' + (state.intendedDrug && state.intendedDrug.id === sib.id ? ' selected' : '');
+        chip.textContent = sib.nm + (sib.cmm ? ' ★' : '');
+        if (sib.cmm) chip.title = 'UHB CMM Stock Line';
+        chip.addEventListener('click', () => {
+          selectIntendedDrug({
+            id: sib.id,
+            name: sib.nm,
+            cmmCode: sib.cm ? sib.cm[0] : '',
+            vtmId: sib.vt,
+            vtmName: sib.vn,
+            vmpId: sib.vp,
+            vmpName: sib.vpn,
+            ampId: sib.ap,
+            ampName: sib.apn,
+            inputMethod: 'SIBLING_CHIP'
+          });
+          renderSiblingChips(mode);
+        });
+        dom.siblingChipsWrap.appendChild(chip);
+      });
+    }
+
+    function selectIntendedDrug(drug) {
+      state.intendedDrug = drug;
+      dom.intendedSelectedCard.style.display = 'block';
+      dom.intendedSelectedName.textContent = drug.name + (drug.cmmCode ? ` (${drug.cmmCode})` : '');
+    }
+
+    dom.btnClearIntended.addEventListener('click', () => {
+      state.intendedDrug = null;
+      dom.intendedSelectedCard.style.display = 'none';
+      dom.intendedSearchInput.value = '';
+    });
+
+    // --- Drug Resolution (Barcode Scan or Type-ahead) ---
+    function resolveAndDisplayDrug(drugData) {
+      state.errorDrug = drugData;
+
+      // Update HUD & Card
+      dom.scanHud.classList.remove('scanning');
+      dom.resolvedCard.classList.add('active');
+      dom.drugSearchInput.value = drugData.name;
+      dom.searchClearBtn.classList.add('visible');
+
+      dom.resolvedName.textContent = drugData.name;
+      dom.resolvedMetaTags.innerHTML = '';
+
+      if (drugData.cmmCode) {
+        const tag = document.createElement('span');
+        tag.className = 'badge-cmm-stock';
+        tag.textContent = `UHB Stock (${drugData.cmmCode})`;
+        dom.resolvedMetaTags.appendChild(tag);
+      }
+      if (drugData.isNti) {
+        const tag = document.createElement('span');
+        tag.className = 'badge-nti';
+        tag.textContent = '⚠️ NTI / Brand-Critical';
+        dom.resolvedMetaTags.appendChild(tag);
+        dom.resolvedCard.classList.add('nti-alert');
+      } else {
+        dom.resolvedCard.classList.remove('nti-alert');
+      }
+      if (drugData.batchNumber) {
+        const tag = document.createElement('span');
+        tag.className = 'meta-tag';
+        tag.textContent = `Batch: ${drugData.batchNumber}`;
+        dom.resolvedMetaTags.appendChild(tag);
+      }
+      if (drugData.expiryDate) {
+        const tag = document.createElement('span');
+        tag.className = 'meta-tag';
+        tag.textContent = `Exp: ${drugData.expiryDate}`;
+        dom.resolvedMetaTags.appendChild(tag);
+      }
+
+      // Check Expiry
+      if (drugData.isExpired) {
+        dom.expiryBanner.className = 'pack-expiry-banner expired';
+        dom.expiryBannerText.textContent = `PACK EXPIRED (${drugData.expiryDate}) - Automatic Out of Date flag suggested`;
+        dom.resolvedCard.classList.add('expired-alert');
+        playBeep('scan-alert');
+
+        // Pulse the Out of Date pill
+        state.selectedCategories.add('Out of Date');
+        renderErrorCategories();
+      } else if (drugData.isShortDated) {
+        dom.expiryBanner.className = 'pack-expiry-banner short-dated';
+        dom.expiryBannerText.textContent = `Short-Dated Pack (${drugData.expiryDate})`;
+        dom.resolvedCard.classList.remove('expired-alert');
+        playBeep('scan-ok');
+      } else {
+        dom.expiryBanner.className = 'pack-expiry-banner';
+        dom.resolvedCard.classList.remove('expired-alert');
+        playBeep('scan-ok');
+      }
+
+      evaluateConditionals();
+    }
+
+    // --- Barcode Scanner Callback ---
+    const scanner = new Gs1ScannerEngine(
+      (res) => {
+        // Visual feedback
+        dom.scanHud.classList.add('scanning');
+        dom.scannerDot.className = 'scanner-dot scanning';
+        setTimeout(() => dom.scanHud.classList.remove('scanning'), 400);
+
+        dom.scannerLiveLog.textContent = `Scanned: "${res.raw}" | Length: ${res.raw.length} | Clean: "${res.clean}" | GTIN14: "${res.gtin14 || '(none)'}"`;
+
+        if (!window.NEARMISS_DRUG_DB) {
+          dom.scannerStatusText.textContent = 'Drug database is still loading, please wait a moment...';
+          dom.scannerDot.className = 'scanner-dot error';
+          return;
+        }
+
+        // Try lookup by 14-digit GTIN, or fallback to clean digits
+        let gtinObj = null;
+        if (res.gtin14) gtinObj = window.NEARMISS_DRUG_DB.getGtin(res.gtin14);
+        if (!gtinObj && res.clean) gtinObj = window.NEARMISS_DRUG_DB.getGtin(res.clean);
+
+        // If Intended Drawer is open and waiting for 2nd scan
+        if (dom.intendedDrawer.classList.contains('open') && !state.intendedDrug) {
+          if (gtinObj && gtinObj.concept) {
+            selectIntendedDrug({
+              id: gtinObj.concept.id,
+              name: gtinObj.packDesc || gtinObj.concept.nm,
+              cmmCode: gtinObj.concept.cm ? gtinObj.concept.cm[0] : '',
+              vtmId: gtinObj.concept.vt,
+              vtmName: gtinObj.concept.vn,
+              vmpId: gtinObj.concept.vp,
+              vmpName: gtinObj.concept.vpn,
+              ampId: gtinObj.ampId || gtinObj.concept.ap,
+              ampName: gtinObj.concept.apn,
+              inputMethod: 'GS1_SCAN'
+            });
+            dom.scannerStatusText.innerHTML = `✅ Intended Drug Scanned: <strong>${gtinObj.packDesc || gtinObj.concept.nm}</strong>`;
+            dom.scannerDot.className = 'scanner-dot';
+            playBeep('scan-ok');
+            return;
+          }
+        }
+
+        // Primary error drug barcode resolution
+        if (gtinObj && gtinObj.concept) {
+          const c = gtinObj.concept;
+          dom.scannerStatusText.innerHTML = `✅ Barcode Resolved: <strong>${gtinObj.packDesc || c.nm}</strong>`;
+          dom.scannerDot.className = 'scanner-dot';
+          resolveAndDisplayDrug({
+            id: c.id,
+            name: gtinObj.packDesc || c.nm,
+            displayName: gtinObj.packDesc || c.nm,
+            cmmCode: c.cm && c.cm.length > 0 ? c.cm[0] : '',
+            vtmId: c.vt,
+            vtmName: c.vn,
+            vmpId: c.vp,
+            vmpName: c.vpn,
+            ampId: gtinObj.ampId || c.ap,
+            ampName: c.apn,
+            amppId: gtinObj.amppId,
+            strength: c.st,
+            form: c.fm,
+            isNti: c.nti,
+            isCmm: c.cmm,
+            scannedGtin14: res.gtin14,
+            batchNumber: res.batchNumber,
+            expiryDate: res.expiryDate,
+            isExpired: res.isExpired,
+            isShortDated: res.isShortDated,
+            inputMethod: 'GS1_SCAN'
+          });
+        } else {
+          playBeep('scan-alert');
+          const codeStr = res.gtin14 || res.clean || res.raw;
+          dom.scanHud.classList.add('error-scan');
+          dom.scannerDot.className = 'scanner-dot error';
+          dom.scannerStatusText.innerHTML = `⚠️ Barcode <strong>${codeStr}</strong> not in local index &mdash; type name below to link`;
+          dom.scanHudTitle.textContent = `Barcode ${codeStr} Recognized`;
+          dom.scanHudSubtitle.textContent = 'Not found in dm+d index. Type medication name below or select from dropdown';
+          dom.drugSearchInput.value = '';
+          dom.drugSearchInput.placeholder = `Type medication name for barcode ${codeStr}...`;
+          dom.drugSearchInput.focus();
+          setTimeout(() => dom.scanHud.classList.remove('error-scan'), 3500);
+        }
+      },
+      (liveBuffer, interval) => {
+        // Live streaming update while scanner types
+        if (liveBuffer) {
+          dom.scannerDot.className = 'scanner-dot scanning';
+          dom.scannerStatusText.textContent = `⚡ Receiving scanner burst: ${liveBuffer.substring(0, 18)}${liveBuffer.length > 18 ? '...' : ''} (${liveBuffer.length} chars)`;
+          dom.scannerLiveLog.textContent = `Streaming input: "${liveBuffer}" (${liveBuffer.length} chars, last key gap: ${interval || 0}ms)`;
+        } else {
+          dom.scannerDot.className = 'scanner-dot';
+          dom.scannerStatusText.textContent = 'Scanner Active • Ready for 2D DataMatrix or 1D EAN Barcode';
+        }
+      }
+    );
+
+    // --- Fast Type-Ahead Search Engine (< 10ms) ---
+    function setupTypeahead(inputEl, dropdownEl, onSelect) {
+      let timer = null;
+
+      inputEl.addEventListener('input', () => {
+        const q = inputEl.value.trim().toLowerCase();
+        if (q.length < 2) {
+          dropdownEl.classList.remove('open');
+          dropdownEl.innerHTML = '';
+          return;
+        }
+
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          if (!window.NEARMISS_DRUG_DB) return;
+
+          const tokens = q.split(/\s+/).filter(Boolean);
+          const concepts = window.NEARMISS_DRUG_DB.concepts;
+          const matches = [];
+
+          // Instant Barcode Lookup in Search Box
+          const pureDigits = q.replace(/\D/g, '');
+          if (pureDigits.length >= 8 && pureDigits.length <= 14) {
+            const g14 = pureDigits.padStart(14, '0');
+            const g = window.NEARMISS_DRUG_DB.getGtin(g14) || window.NEARMISS_DRUG_DB.getGtin(pureDigits);
+            if (g && g.concept) {
+              matches.push(Object.assign({}, g.concept, {
+                nm: `[Barcode Match] ${g.packDesc || g.concept.nm}`,
+                _exactBarcode: true
+              }));
+            }
+          }
+
+          for (let i = 0; i < concepts.length; i++) {
+            const raw = concepts[i];
+            const name = raw[1].toLowerCase();
+            const id = raw[0].toLowerCase();
+            const drug = raw[2].toLowerCase();
+
+            // Match all query tokens against name or CMM code or drug
+            let allMatch = true;
+            for (let t = 0; t < tokens.length; t++) {
+              const tok = tokens[t];
+              if (!name.includes(tok) && !id.includes(tok) && !drug.includes(tok)) {
+                allMatch = false;
+                break;
+              }
+            }
+
+            if (allMatch) {
+              matches.push(window.NEARMISS_DRUG_DB.getConcept(i));
+              if (matches.length >= 15) break;
+            }
+          }
+
+          // Render matches
+          dropdownEl.innerHTML = '';
+          if (matches.length === 0) {
+            const emptyItem = document.createElement('div');
+            emptyItem.className = 'typeahead-item';
+            emptyItem.innerHTML = `<span class="secondary-text">No matching stock found. <strong style="color:var(--nhs-blue); cursor:pointer;">+ Use custom item "${inputEl.value}"</strong></span>`;
+            emptyItem.addEventListener('click', () => {
+              onSelect({
+                id: 'CUSTOM',
+                name: inputEl.value.trim(),
+                cmmCode: '',
+                vtmId: '',
+                vtmName: '',
+                vmpId: '',
+                vmpName: '',
+                ampId: '',
+                ampName: '',
+                isNti: false,
+                isCmm: false,
+                inputMethod: 'MANUAL_TYPE'
+              });
+              dropdownEl.classList.remove('open');
+            });
+            dropdownEl.appendChild(emptyItem);
+          } else {
+            matches.forEach((m) => {
+              const item = document.createElement('div');
+              item.className = 'typeahead-item';
+              item.innerHTML = `
+                <div>
+                  <div class="primary-text">${m.nm}</div>
+                  <div class="secondary-text">${m.vn || m.dg || ''} &bull; ${m.vp || m.id}</div>
+                </div>
+                <div>
+                  ${m.cmm ? `<span class="badge-cmm-stock">${m.id}</span>` : ''}
+                  ${m.nti ? `<span class="badge-nti">NTI</span>` : ''}
+                </div>
+              `;
+              item.addEventListener('click', () => {
+                onSelect({
+                  id: m.id,
+                  name: m.nm,
+                  displayName: m.nm,
+                  cmmCode: m.cm && m.cm.length > 0 ? m.cm[0] : (m.cmm ? m.id : ''),
+                  vtmId: m.vt,
+                  vtmName: m.vn,
+                  vmpId: m.vp,
+                  vmpName: m.vpn,
+                  ampId: m.ap,
+                  ampName: m.apn,
+                  amppId: '',
+                  strength: m.st,
+                  form: m.fm,
+                  isNti: m.nti,
+                  isCmm: m.cmm,
+                  inputMethod: 'TYPEAHEAD_SEARCH'
+                });
+                dropdownEl.classList.remove('open');
+              });
+              dropdownEl.appendChild(item);
+            });
+          }
+          dropdownEl.classList.add('open');
+        }, 30);
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
+          dropdownEl.classList.remove('open');
+        }
+      });
+    }
+
+    setupTypeahead(dom.drugSearchInput, dom.typeaheadDropdown, resolveAndDisplayDrug);
+    setupTypeahead(dom.intendedSearchInput, dom.intendedTypeaheadDropdown, selectIntendedDrug);
+
+    // Enter Key Handler on Drug Search Box (direct barcode entry)
+    dom.drugSearchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const val = dom.drugSearchInput.value.trim();
+        if (val) {
+          const digits = val.replace(/\D/g, '');
+          if (digits.length >= 8 && digits.length <= 14) {
+            e.preventDefault();
+            dom.typeaheadDropdown.classList.remove('open');
+            scanner.processScannedPayload(val);
+            return;
+          }
+          const firstItem = dom.typeaheadDropdown.querySelector('.typeahead-item');
+          if (firstItem) {
+            e.preventDefault();
+            firstItem.click();
+          }
+        }
+      }
+    });
+
+    // Enter Key Handler on Intended Search Box
+    dom.intendedSearchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const val = dom.intendedSearchInput.value.trim();
+        if (val) {
+          const digits = val.replace(/\D/g, '');
+          if (digits.length >= 8 && digits.length <= 14) {
+            e.preventDefault();
+            dom.intendedTypeaheadDropdown.classList.remove('open');
+            scanner.processScannedPayload(val);
+            return;
+          }
+          const firstItem = dom.intendedTypeaheadDropdown.querySelector('.typeahead-item');
+          if (firstItem) {
+            e.preventDefault();
+            firstItem.click();
+          }
+        }
+      }
+    });
+
+    // Scanner Diagnostics Drawer & Manual Barcode Test Controls
+    dom.scannerDebugToggle.addEventListener('click', () => {
+      const isHidden = dom.scannerDebugDrawer.style.display === 'none';
+      dom.scannerDebugDrawer.style.display = isHidden ? 'block' : 'none';
+      if (isHidden) {
+        dom.manualBarcodeInput.focus();
+      }
+    });
+
+    dom.btnTestBarcode.addEventListener('click', () => {
+      const val = dom.manualBarcodeInput.value.trim();
+      if (!val) {
+        alert('Please enter or scan a barcode into the test box first.');
+        return;
+      }
+      scanner.processScannedPayload(val);
+    });
+
+    dom.manualBarcodeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        dom.btnTestBarcode.click();
+      }
+    });
+
+    // Unlock Web Audio API on first user interaction
+    window.addEventListener('pointerdown', () => {
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }, { once: true });
+    window.addEventListener('keydown', () => {
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }, { once: true });
+
+    dom.searchClearBtn.addEventListener('click', () => {
+      dom.drugSearchInput.value = '';
+      dom.searchClearBtn.classList.remove('visible');
+      dom.drugSearchInput.focus();
+    });
+
+    dom.btnChangeDrug.addEventListener('click', () => {
+      dom.resolvedCard.classList.remove('active');
+      dom.drugSearchInput.value = '';
+      dom.drugSearchInput.focus();
+    });
+
+    // --- Mobile Camera Barcode Scanner Controller (Native BarcodeDetector + ZXing Fallback) ---
+    class CameraScannerController {
+      constructor(onBarcodeDetected) {
+        this.onBarcodeDetected = onBarcodeDetected;
+        this.videoStream = null;
+        this.track = null;
+        this.isScanning = false;
+        this.scanMode = 'errorDrug'; // 'errorDrug' | 'intendedDrug'
+        this.facingMode = 'environment';
+        this.torchOn = false;
+        this.zxingReader = null;
+        this.rafId = null;
+
+        // Elements
+        this.backdrop = document.getElementById('cameraModalBackdrop');
+        this.videoEl = document.getElementById('cameraVideo');
+        this.reticle = document.getElementById('cameraReticle');
+        this.tip = document.getElementById('cameraTip');
+        this.modalTitle = document.getElementById('cameraModalTitle');
+        this.statusNote = document.getElementById('cameraStatusNote');
+        this.btnTorch = document.getElementById('btnToggleTorch');
+        this.btnFlip = document.getElementById('btnFlipCamera');
+        this.btnClose = document.getElementById('btnCloseCameraModal');
+        this.btnCancel = document.getElementById('btnCancelCamera');
+
+        this.initListeners();
+      }
+
+      initListeners() {
+        if (!this.btnClose) return;
+        this.btnClose.addEventListener('click', () => this.stopAndClose());
+        this.btnCancel.addEventListener('click', () => this.stopAndClose());
+        this.backdrop.addEventListener('click', (e) => {
+          if (e.target === this.backdrop) this.stopAndClose();
+        });
+
+        this.btnFlip.addEventListener('click', () => {
+          this.facingMode = (this.facingMode === 'environment') ? 'user' : 'environment';
+          this.startCameraStream();
+        });
+
+        this.btnTorch.addEventListener('click', async () => {
+          if (!this.track) return;
+          try {
+            this.torchOn = !this.torchOn;
+            await this.track.applyConstraints({ advanced: [{ torch: this.torchOn }] });
+            this.btnTorch.textContent = this.torchOn ? '🔦 Torch On' : '💡 Torch';
+          } catch (e) {
+            console.warn('Torch constraint not supported', e);
+          }
+        });
+      }
+
+      async openScanner(mode = 'errorDrug') {
+        this.scanMode = mode;
+        this.modalTitle.textContent = (mode === 'intendedDrug') 
+          ? '📷 Scan Correct / Intended Medication' 
+          : '📷 Scan Implicated Medication Pack';
+        this.reticle.classList.remove('success');
+        this.backdrop.style.display = 'flex';
+        this.tip.textContent = 'Center 2D DataMatrix or 1D barcode in the frame';
+        await this.startCameraStream();
+      }
+
+      async startCameraStream() {
+        this.stopCurrentStream();
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          alert('Camera access is not available on this device/browser. Please ensure you are viewing over HTTPS or localhost, and camera permissions are granted.');
+          this.stopAndClose();
+          return;
+        }
+
+        try {
+          const constraints = {
+            video: {
+              facingMode: { ideal: this.facingMode },
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            },
+            audio: false
+          };
+
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          this.videoStream = stream;
+          this.track = stream.getVideoTracks()[0];
+          this.videoEl.srcObject = stream;
+          await this.videoEl.play();
+
+          // Check torch capability
+          if (this.track && typeof this.track.getCapabilities === 'function') {
+            const caps = this.track.getCapabilities();
+            if (caps && caps.torch) {
+              this.btnTorch.style.display = 'inline-block';
+              this.torchOn = false;
+              this.btnTorch.textContent = '💡 Torch';
+            } else {
+              this.btnTorch.style.display = 'none';
+            }
+          } else {
+            this.btnTorch.style.display = 'none';
+          }
+
+          this.isScanning = true;
+          this.startDetectionLoop();
+        } catch (err) {
+          console.error('Camera stream error:', err);
+          alert('Could not start camera: ' + (err.message || 'Permission denied'));
+          this.stopAndClose();
+        }
+      }
+
+      startDetectionLoop() {
+        // Priority 1: Native BarcodeDetector (Chrome, Edge, Android)
+        if ('BarcodeDetector' in window) {
+          try {
+            const detector = new BarcodeDetector({
+              formats: ['data_matrix', 'ean_13', 'ean_8', 'code_128', 'code_39', 'qr_code', 'upc_a', 'upc_e']
+            });
+
+            let lastCheck = 0;
+            const detectFrame = async (now) => {
+              if (!this.isScanning) return;
+              if (now - lastCheck >= 100 && this.videoEl.readyState >= 2) {
+                lastCheck = now;
+                try {
+                  const barcodes = await detector.detect(this.videoEl);
+                  if (barcodes && barcodes.length > 0) {
+                    const hit = barcodes[0];
+                    this.handleSuccessfulScan(hit.rawValue);
+                    return;
+                  }
+                } catch (e) {
+                  // Fall through to next frame
+                }
+              }
+              this.rafId = requestAnimationFrame(detectFrame);
+            };
+            this.rafId = requestAnimationFrame(detectFrame);
+            return;
+          } catch (e) {
+            console.warn('Native BarcodeDetector failed, falling back to ZXing', e);
+          }
+        }
+
+        // Priority 2: Offline ZXing Decoder (iOS Safari, Firefox, Desktop webcams)
+        if (window.ZXing && window.ZXing.BrowserMultiFormatReader) {
+          try {
+            if (!this.zxingReader) {
+              this.zxingReader = new window.ZXing.BrowserMultiFormatReader();
+            }
+            this.zxingReader.decodeFromVideoElement(this.videoEl, (result, err) => {
+              if (!this.isScanning) return;
+              if (result && result.getText()) {
+                this.handleSuccessfulScan(result.getText());
+              }
+            });
+            return;
+          } catch (e) {
+            console.error('ZXing decoder init error:', e);
+          }
+        }
+
+        this.tip.textContent = 'Scanner engine loading or not supported on this browser';
+      }
+
+      handleSuccessfulScan(rawBarcode) {
+        if (!this.isScanning) return;
+        this.isScanning = false;
+        if (this.rafId) {
+          cancelAnimationFrame(this.rafId);
+          this.rafId = null;
+        }
+
+        this.reticle.classList.add('success');
+        this.tip.textContent = '✅ Scanned: ' + rawBarcode;
+        if (navigator.vibrate) {
+          try { navigator.vibrate([60, 40, 60]); } catch (e) {}
+        }
+        playBeep('scan-ok');
+
+        setTimeout(() => {
+          this.stopAndClose();
+          this.onBarcodeDetected(rawBarcode, this.scanMode);
+        }, 300);
+      }
+
+      stopCurrentStream() {
+        this.isScanning = false;
+        if (this.rafId) {
+          cancelAnimationFrame(this.rafId);
+          this.rafId = null;
+        }
+        if (this.zxingReader && typeof this.zxingReader.reset === 'function') {
+          try { this.zxingReader.reset(); } catch (e) {}
+        }
+        if (this.videoStream) {
+          this.videoStream.getTracks().forEach(t => t.stop());
+          this.videoStream = null;
+          this.track = null;
+        }
+        if (this.videoEl) {
+          this.videoEl.srcObject = null;
+        }
+      }
+
+      stopAndClose() {
+        this.stopCurrentStream();
+        this.backdrop.style.display = 'none';
+        this.reticle.classList.remove('success');
+      }
+    }
+
+    const cameraScanner = new CameraScannerController((rawBarcode, targetMode) => {
+      if (targetMode === 'intendedDrug') {
+        dom.intendedDrawer.classList.add('open');
+      }
+      scanner.processScannedPayload(rawBarcode);
+    });
+
+    if (dom.btnOpenMobileScanner) {
+      dom.btnOpenMobileScanner.addEventListener('click', () => {
+        cameraScanner.openScanner('errorDrug');
+      });
+    }
+
+    if (dom.btnOpenIntendedMobileScanner) {
+      dom.btnOpenIntendedMobileScanner.addEventListener('click', () => {
+        cameraScanner.openScanner('intendedDrug');
+      });
+    }
+
+    // --- Contributing Factors Toggles ---
+    dom.factorChipsGroup.addEventListener('click', (e) => {
+      const chip = e.target.closest('.factor-chip');
+      if (!chip) return;
+      const val = chip.dataset.val;
+      if (state.contributingFactors.has(val)) {
+        state.contributingFactors.delete(val);
+        chip.classList.remove('selected');
+      } else {
+        state.contributingFactors.add(val);
+        chip.classList.add('selected');
+      }
+    });
+
+    // --- Hard PID Guardrail (Regex blocking 10-digit NHS or hospital numbers) ---
+    dom.learningNoteInput.addEventListener('input', () => {
+      const text = dom.learningNoteInput.value;
+      // NHS Number pattern (10 digits, optional spaces) or UHB MRN (Letter + 6-7 digits)
+      const hasNhsNumber = /\b\d{3}\s?\d{3}\s?\d{4}\b/.test(text) || /\b\d{10}\b/.test(text);
+      const hasHospitalNumber = /\b[A-Za-z]\d{6,7}\b/.test(text);
+
+      if (hasNhsNumber || hasHospitalNumber) {
+        dom.pidWarning.classList.add('active');
+        dom.btnSubmit.disabled = true;
+      } else {
+        dom.pidWarning.classList.remove('active');
+        dom.btnSubmit.disabled = false;
+      }
+      state.learningNote = text;
+    });
+
+    // --- Top Bar Event Listeners ---
+    dom.siteSelect.addEventListener('change', () => {
+      state.site = dom.siteSelect.value;
+      localStorage.setItem('nearmiss_site', state.site);
+    });
+
+    dom.satelliteToggle.addEventListener('change', () => {
+      state.isSatelliteUnit = dom.satelliteToggle.checked;
+      localStorage.setItem('nearmiss_satellite', state.isSatelliteUnit);
+      dom.satelliteNamePill.style.display = state.isSatelliteUnit ? 'flex' : 'none';
+    });
+
+    dom.satelliteNameSelect.addEventListener('change', () => {
+      state.satelliteUnitName = dom.satelliteNameSelect.value;
+      localStorage.setItem('nearmiss_satellite_name', state.satelliteUnitName);
+    });
+
+    dom.btnModeDispensing.addEventListener('click', () => setNearMissType('Dispensing'));
+    dom.btnModeClinical.addEventListener('click', () => setNearMissType('Clinical'));
+
+    dom.completedByInput.addEventListener('input', () => {
+      state.completedBy = dom.completedByInput.value.trim().toUpperCase();
+      localStorage.setItem('nearmiss_completed_by', state.completedBy);
+    });
+
+    dom.timeOfDaySelect.addEventListener('change', () => {
+      state.timeOfDay = dom.timeOfDaySelect.value;
+    });
+
+    dom.themeToggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('nearmiss_dark_mode', isDark);
+    });
+    if (localStorage.getItem('nearmiss_dark_mode') === 'true') {
+      document.body.classList.add('dark-mode');
+    }
+
+    // --- Keyboard Hotkeys ---
+    window.addEventListener('keydown', (e) => {
+      // Hotkey: Ctrl + Enter -> Submit
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        submitForm();
+        return;
+      }
+
+      // Hotkey: Esc -> Reset
+      if (e.key === 'Escape') {
+        resetForm();
+        return;
+      }
+
+      // Hotkey: '/' -> Focus Search Box (unless currently typing in a box)
+      if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        dom.drugSearchInput.focus();
+        return;
+      }
+
+      // Hotkeys: [1-9] for Error Categories (when not focused on text input)
+      if (/^[1-9]$/.test(e.key) && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        const list = (state.nearMissType === 'Dispensing') ? CATEGORIES_DISPENSING : CATEGORIES_CLINICAL;
+        const cat = list.find(c => c.key === e.key);
+        if (cat) {
+          e.preventDefault();
+          toggleErrorCategory(cat);
+        }
+      }
+    });
+
+    // --- Form Submission & StorageProvider Pipeline ---
+    dom.btnSubmit.addEventListener('click', submitForm);
+    dom.btnResetForm.addEventListener('click', resetForm);
+
+    function buildCanonicalPayload() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const tsCode = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      const siteCode = state.site.replace(/\s+/g, '').substring(0, 4).toUpperCase();
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const eventId = `NM-${tsCode}-${siteCode}-${rand}`;
+
+      return {
+        schemaVersion: "1.0",
+        eventId: eventId,
+        submittedAtIso: now.toISOString(),
+        site: state.site,
+        siteOther: state.siteOther,
+        nearMissType: state.nearMissType,
+        isSatelliteUnit: state.isSatelliteUnit ? "Yes" : "No",
+        satelliteUnitName: state.isSatelliteUnit ? state.satelliteUnitName : "",
+        completedBy: state.completedBy,
+        completedOn: state.completedOn,
+        timeOfDay: state.timeOfDay,
+        errorCategories: Array.from(state.selectedCategories),
+        
+        errorDrug: state.errorDrug ? {
+          inputMethod: state.errorDrug.inputMethod || "MANUAL_TYPE",
+          scannedGtin14: state.errorDrug.scannedGtin14 || "",
+          batchNumber: state.errorDrug.batchNumber || "",
+          expiryDate: state.errorDrug.expiryDate || "",
+          isExpiredAtScan: Boolean(state.errorDrug.isExpired),
+          displayName: state.errorDrug.name || "",
+          cmmCode: state.errorDrug.cmmCode || "",
+          vtmId: state.errorDrug.vtmId || "",
+          vtmName: state.errorDrug.vtmName || "",
+          vmpId: state.errorDrug.vmpId || "",
+          vmpName: state.errorDrug.vmpName || "",
+          ampId: state.errorDrug.ampId || "",
+          ampName: state.errorDrug.ampName || "",
+          amppId: state.errorDrug.amppId || "",
+          isNti: Boolean(state.errorDrug.isNti)
+        } : null,
+        
+        intendedDrug: state.intendedDrug ? {
+          inputMethod: state.intendedDrug.inputMethod || "MANUAL_TYPE",
+          scannedGtin14: state.intendedDrug.scannedGtin14 || "",
+          displayName: state.intendedDrug.name || "",
+          cmmCode: state.intendedDrug.cmmCode || "",
+          vtmId: state.intendedDrug.vtmId || "",
+          vtmName: state.intendedDrug.vtmName || "",
+          vmpId: state.intendedDrug.vmpId || "",
+          vmpName: state.intendedDrug.vmpName || "",
+          ampId: state.intendedDrug.ampId || "",
+          ampName: state.intendedDrug.ampName || "",
+          isNti: Boolean(state.intendedDrug.isNti)
+        } : null,
+
+        quantityDispensed: dom.qtyDispensedInput.value.trim(),
+        quantityPrescribed: dom.qtyPrescribedInput.value.trim(),
+        contributingFactors: Array.from(state.contributingFactors),
+        learningNote: dom.learningNoteInput.value.trim()
+      };
+    }
+
+    async function submitForm() {
+      // Validation: At least one error category or error drug must be selected
+      if (state.selectedCategories.size === 0 && !state.errorDrug) {
+        alert('Please scan/select an implicated drug or choose at least one error category.');
+        return;
+      }
+
+      const payload = buildCanonicalPayload();
+      state.lastSubmittedEventId = payload.eventId;
+
+      // Send to StorageProvider
+      let saved = false;
+      const cfg = window.NEARMISS_CONFIG || { storageMode: 'local-bridge', localBridgeUrl: 'http://localhost:8088' };
+      let targetUrl = cfg.localBridgeUrl + '/api/nearmiss';
+      if (cfg.storageMode === 'iis-api' && cfg.iisEndpoint) targetUrl = cfg.iisEndpoint;
+      if (cfg.storageMode === 'sharepoint-webhook' && cfg.sharepointWebhookUrl) targetUrl = cfg.sharepointWebhookUrl;
+
+      try {
+        const res = await fetch(targetUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) saved = true;
+      } catch (err) {
+        saved = false;
+      }
+
+      if (!saved) {
+        // Fallback: Store in offline queue in localStorage
+        const queue = JSON.parse(localStorage.getItem('nearmiss_offline_queue') || '[]');
+        queue.push(payload);
+        localStorage.setItem('nearmiss_offline_queue', JSON.stringify(queue));
+        updateOfflineBadge();
+      }
+
+      playBeep('submit-success');
+      showToast(`Near Miss ${payload.eventId} recorded successfully`, payload.eventId);
+      resetForm(true); // Preserve sticky header settings
+    }
+
+    function showToast(msg, eventId) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `
+        <span>✓ ${msg}</span>
+        <button type="button" class="btn-undo" id="btnUndoToast">Undo</button>
+      `;
+
+      dom.toastContainer.appendChild(toast);
+
+      const undoBtn = toast.querySelector('#btnUndoToast');
+      undoBtn.addEventListener('click', async () => {
+        try {
+          const cfg = window.NEARMISS_CONFIG || { localBridgeUrl: 'http://localhost:8088' };
+          const undoUrl = (cfg.storageMode === 'iis-api' ? cfg.iisEndpoint : cfg.localBridgeUrl) + '/api/nearmiss/' + eventId;
+          await fetch(undoUrl, { method: 'DELETE' });
+        } catch(e) {}
+        
+        // Remove from offline queue if present
+        const queue = JSON.parse(localStorage.getItem('nearmiss_offline_queue') || '[]');
+        const filtered = queue.filter(e => e.eventId !== eventId);
+        localStorage.setItem('nearmiss_offline_queue', JSON.stringify(filtered));
+        updateOfflineBadge();
+
+        toast.remove();
+      });
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+
+    function updateOfflineBadge() {
+      const queue = JSON.parse(localStorage.getItem('nearmiss_offline_queue') || '[]');
+      if (queue.length > 0) {
+        dom.offlineQueueBadge.textContent = `Offline Queue: ${queue.length} (Export)`;
+        dom.offlineQueueBadge.classList.add('visible');
+      } else {
+        dom.offlineQueueBadge.classList.remove('visible');
+      }
+    }
+
+    dom.offlineQueueBadge.addEventListener('click', () => {
+      const queue = localStorage.getItem('nearmiss_offline_queue') || '[]';
+      const blob = new Blob([queue], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `nearmiss_offline_backup_${new Date().toISOString().substring(0, 10)}.json`;
+      a.click();
+    });
+
+    function resetForm(preserveSticky = true) {
+      state.errorDrug = null;
+      state.intendedDrug = null;
+      state.selectedCategories.clear();
+      state.contributingFactors.clear();
+      state.learningNote = '';
+
+      dom.drugSearchInput.value = '';
+      dom.searchClearBtn.classList.remove('visible');
+      dom.resolvedCard.classList.remove('active', 'expired-alert', 'nti-alert');
+      dom.expiryBanner.className = 'pack-expiry-banner';
+
+      dom.intendedDrawer.classList.remove('open');
+      dom.intendedSearchInput.value = '';
+      dom.intendedSelectedCard.style.display = 'none';
+
+      dom.qtyInputsWrap.classList.remove('open');
+      dom.qtyDispensedInput.value = '';
+      dom.qtyPrescribedInput.value = '';
+
+      dom.factorChipsGroup.querySelectorAll('.factor-chip').forEach(c => c.classList.remove('selected'));
+      dom.learningNoteInput.value = '';
+      dom.pidWarning.classList.remove('active');
+
+      renderErrorCategories();
+
+      if (!preserveSticky) {
+        state.site = 'Queen Elizabeth';
+        state.isSatelliteUnit = false;
+        state.completedBy = '';
+        initWorkstation();
+      }
+    }
+
+    // --- Start App ---
+    initWorkstation();
+  })();
+  </script>
+</body>
+</html>
+
